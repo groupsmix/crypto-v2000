@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Settings, Database, FileText, BarChart3, Users } from "lucide-react";
+import { Settings, Database, FileText, BarChart3, Users, Bot } from "lucide-react";
 import { Section } from "@/components/ui/section";
 
 export const metadata: Metadata = {
@@ -12,6 +12,7 @@ const adminSections = [
   { icon: Database, title: "Exchanges", description: "Manage exchange listings and data", href: null },
   { icon: FileText, title: "Blog Posts", description: "Create and edit blog content", href: "/admin/blog" },
   { icon: BarChart3, title: "Analytics", description: "View traffic and affiliate clicks", href: "/admin/affiliate" },
+  { icon: Bot, title: "Content Automation", description: "AI-powered content generation pipeline", href: "/admin/automation" },
   { icon: Users, title: "Users", description: "Manage user accounts", href: null },
 ];
 

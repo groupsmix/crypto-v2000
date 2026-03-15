@@ -141,15 +141,37 @@ model PriceAlert {
   @@map("price_alerts")
 }
 
-// ─── AutomationJob ──────────────────────────────────────────────────────────────
+// ─── AutomationRun ─────────────────────────────────────────────────────────────
 
-model AutomationJob {
-  id             String    @id @default(cuid())
-  jobType        String    @map("job_type")
-  status         String    @default("pending")
-  startedAt      DateTime? @map("started_at")
-  completedAt    DateTime? @map("completed_at")
-  resultSummary  String?   @map("result_summary")
+model AutomationRun {
+  id               String           @id @default(cuid())
+  jobType          String           @map("job_type")
+  status           String           @default("pending") // pending | running | completed | failed
+  topicsFetched    Int              @default(0) @map("topics_fetched")
+  articlesCreated  Int              @default(0) @map("articles_created")
+  imagesGenerated  Int              @default(0) @map("images_generated")
+  errorCount       Int              @default(0) @map("error_count")
+  startedAt        DateTime?        @map("started_at")
+  completedAt      DateTime?        @map("completed_at")
+  resultSummary    String?          @map("result_summary")
+  createdAt        DateTime         @default(now()) @map("created_at")
 
-  @@map("automation_jobs")
+  logs             AutomationLog[]
+
+  @@map("automation_runs")
+}
+
+// ─── AutomationLog ─────────────────────────────────────────────────────────────
+
+model AutomationLog {
+  id              String        @id @default(cuid())
+  runId           String        @map("run_id")
+  level           String        @default("info") // info | warn | error
+  message         String
+  metadata        String?       // JSON string for extra context
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  run             AutomationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("automation_logs")
 }

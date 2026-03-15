@@ -8,19 +8,23 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
+    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
+    "worker:start": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/lib/queue/start-worker.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@upstash/redis": "^1.37.0",
+    "bullmq": "^5.71.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
+    "ioredis": "^5.10.0",
     "lucide-react": "^0.577.0",
     "next": "14.2.35",
     "pg": "^8.20.0",
