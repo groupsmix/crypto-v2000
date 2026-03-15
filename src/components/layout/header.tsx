@@ -7,6 +7,7 @@ import { siteConfig } from "@/config/site";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AuthButtons, MobileAuthButtons } from "@/components/auth/user-menu";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -42,10 +43,7 @@ export function Header() {
             <Search className="h-4 w-4" />
           </Button>
           <ThemeToggle />
-          <Button variant="ghost" size="sm">
-            Log in
-          </Button>
-          <Button size="sm">Sign up</Button>
+          <AuthButtons />
         </div>
 
         {/* Mobile Actions */}
@@ -73,7 +71,7 @@ export function Header() {
       <div
         className={cn(
           "lg:hidden overflow-hidden transition-all duration-300 ease-in-out border-t border-border/40",
-          mobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 border-t-0"
+          mobileMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0 border-t-0"
         )}
       >
         <Container className="py-4 space-y-3">
@@ -89,14 +87,7 @@ export function Header() {
               </Link>
             ))}
           </nav>
-          <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-            <Button variant="outline" size="sm" className="w-full">
-              Log in
-            </Button>
-            <Button size="sm" className="w-full">
-              Sign up
-            </Button>
-          </div>
+          <MobileAuthButtons />
         </Container>
       </div>
     </header>

@@ -103,15 +103,34 @@ model BlogPost {
 
 model User {
   id               String             @id @default(cuid())
+  name             String?
   email            String             @unique
+  emailVerified    DateTime?          @map("email_verified")
   passwordHash     String             @map("password_hash")
   createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
 
   savedComparisons SavedComparison[]
   priceAlerts      PriceAlert[]
   affiliateClicks  AffiliateClick[]
+  watchlists       Watchlist[]
 
   @@map("users")
+}
+
+// ─── Watchlist ──────────────────────────────────────────────────────────────────
+
+model Watchlist {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  coinSymbol   String   @map("coin_symbol")
+  coinName     String   @map("coin_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, coinSymbol])
+  @@map("watchlists")
 }
 
 // ─── SavedComparison ────────────────────────────────────────────────────────────
