@@ -6,6 +6,12 @@ export type SiteConfig = {
   links: {
     twitter: string;
     github: string;
+    discord: string;
+    telegram: string;
   };
   nav: readonly { title: string; href: string }[];
+  footerNav: {
+    legal: readonly { title: string; href: string }[];
+    quickLinks: readonly { title: string; href: string }[];
+  };
 };

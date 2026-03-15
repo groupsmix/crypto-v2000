@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { ThemeScript } from "@/components/ui/theme-script";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -31,11 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col antialiased`}
       >
         <Header />
-        <div className="flex-1 flex flex-col">{children}</div>
+        <main className="flex-1 flex flex-col">{children}</main>
         <Footer />
       </body>
     </html>

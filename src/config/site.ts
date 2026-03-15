@@ -6,11 +6,30 @@ export const siteConfig = {
   links: {
     twitter: "#",
     github: "#",
+    discord: "#",
+    telegram: "#",
   },
   nav: [
     { title: "Home", href: "/" },
     { title: "Compare", href: "/compare" },
     { title: "Exchanges", href: "/exchanges" },
+    { title: "Prices", href: "/prices" },
+    { title: "Offers", href: "/offers" },
     { title: "Blog", href: "/blog" },
+    { title: "Tools", href: "/tools" },
+    { title: "Learn", href: "/learn" },
   ],
+  footerNav: {
+    legal: [
+      { title: "About", href: "/about" },
+      { title: "Privacy", href: "/privacy" },
+      { title: "Terms", href: "/terms" },
+    ],
+    quickLinks: [
+      { title: "Compare", href: "/compare" },
+      { title: "Blog", href: "/blog" },
+      { title: "Tools", href: "/tools" },
+      { title: "Learn", href: "/learn" },
+    ],
+  },
 } as const;
