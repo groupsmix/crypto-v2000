@@ -14,6 +14,7 @@ const adminSections = [
   { icon: BarChart3, title: "Analytics", description: "View traffic and affiliate clicks", href: "/admin/affiliate" },
   { icon: Bot, title: "Content Automation", description: "AI-powered content generation pipeline", href: "/admin/automation" },
   { icon: Users, title: "Users", description: "Manage user accounts", href: null },
+  { icon: Bot, title: "Chat Conversations", description: "View AI chatbot conversation logs", href: "/admin/conversations" },
 ];
 
 export default function AdminPage() {

@@ -141,6 +141,37 @@ model PriceAlert {
   @@map("price_alerts")
 }
 
+// ─── ChatConversation ──────────────────────────────────────────────────────────
+
+model ChatConversation {
+  id           String        @id @default(cuid())
+  sessionId    String        @map("session_id")
+  userId       String?       @map("user_id")
+  intent       String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  messages     ChatMessage[]
+
+  @@index([sessionId])
+  @@map("chat_conversations")
+}
+
+// ─── ChatMessage ───────────────────────────────────────────────────────────────
+
+model ChatMessage {
+  id               String           @id @default(cuid())
+  conversationId   String           @map("conversation_id")
+  role             String           // "user" | "assistant"
+  content          String
+  groundingSources String?          @map("grounding_sources") // JSON string
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  conversation     ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
 // ─── AutomationRun ─────────────────────────────────────────────────────────────
 
 model AutomationRun {
