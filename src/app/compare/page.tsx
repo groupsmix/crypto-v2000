@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import { ArrowLeftRight } from "lucide-react";
 import { Section } from "@/components/ui/section";
+import { ComparisonTable } from "@/components/compare/comparison-table";
+import { getAllExchangesForComparison } from "@/lib/data/exchanges";
 
 export const metadata: Metadata = {
-  title: "Compare Exchanges",
+  title: "Compare Crypto Exchanges – Side-by-Side Fees, Features & Bonuses",
   description:
-    "Compare crypto exchanges side-by-side. Analyze fees, security, features, and more.",
+    "Compare crypto exchanges side-by-side. Analyze trading fees, supported coins, signup bonuses, KYC requirements, and more to find the best platform for you.",
+  openGraph: {
+    title: "Compare Crypto Exchanges | CryptoCompare AI",
+    description:
+      "Side-by-side comparison of top crypto exchanges including Binance, Coinbase, Kraken, Bybit, and KuCoin. Filter by KYC, spot, and futures trading.",
+  },
 };
 
-export default function ComparePage() {
+export default async function ComparePage() {
+  const exchanges = await getAllExchangesForComparison();
+
   return (
     <Section>
       <div className="space-y-8">
@@ -17,20 +26,15 @@ export default function ComparePage() {
             <ArrowLeftRight className="h-6 w-6 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Compare Exchanges
+            Compare Crypto Exchanges
           </h1>
           <p className="text-muted-foreground">
-            Select two or more exchanges to compare fees, features, security,
-            and more side-by-side.
+            Filter and compare exchanges by fees, features, bonuses, and more.
+            Select two or more to compare side-by-side.
           </p>
         </div>
 
-        {/* Comparison tool placeholder */}
-        <div className="rounded-xl border border-dashed border-border bg-muted/30 p-12 md:p-20 text-center">
-          <p className="text-sm text-muted-foreground">
-            Comparison tool will be implemented here.
-          </p>
-        </div>
+        <ComparisonTable exchanges={exchanges} />
       </div>
     </Section>
   );
