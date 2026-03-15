@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const adminSections = [
   { icon: Database, title: "Exchanges", description: "Manage exchange listings and data", href: null },
-  { icon: FileText, title: "Blog Posts", description: "Create and edit blog content", href: null },
+  { icon: FileText, title: "Blog Posts", description: "Create and edit blog content", href: "/admin/blog" },
   { icon: BarChart3, title: "Analytics", description: "View traffic and affiliate clicks", href: "/admin/affiliate" },
   { icon: Users, title: "Users", description: "Manage user accounts", href: null },
 ];
