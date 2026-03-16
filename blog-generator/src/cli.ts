@@ -1,8 +1,20 @@
 import "dotenv/config";
 import { generateDraft } from "./lib/generator";
-import { saveDraft, listDrafts, loadDraft, saveRunLog } from "./lib/storage";
+import {
+  saveDraft,
+  listPosts,
+  listPostsByStatus,
+  loadPost,
+  saveRunLog,
+} from "./lib/storage";
 import { validateInput } from "./lib/validator";
-import type { GenerateInput, RunLog } from "./lib/types";
+import {
+  schedulePost,
+  unschedulePost,
+  publishPostNow,
+  runScheduledPublishing,
+} from "./lib/scheduler";
+import type { GenerateInput, RunLog, PostStatus } from "./lib/types";
 
 function generateRunId(): string {
   const timestamp = Date.now().toString(36);
@@ -25,11 +37,23 @@ Commands:
   generate-many --topics="<topic1>" --topics="<topic2>" ...
       Generate multiple blog drafts from a list of topics.
 
-  list
-      List all saved drafts (slug, title, date, status).
+  list [--status="<status>"]
+      List all posts, optionally filtered by status (draft, scheduled, published).
 
   show --slug="<slug>"
-      Display a draft by its slug.
+      Display a post by its slug.
+
+  schedule --slug="<slug>" --datetime="<ISO datetime>"
+      Schedule a draft for future publishing.
+
+  unschedule --slug="<slug>"
+      Unschedule a post, reverting it to draft.
+
+  publish-now --slug="<slug>"
+      Publish a post immediately.
+
+  run-scheduled
+      Run the scheduled publishing pipeline (publish all due posts).
 
   help
       Show this help message.
@@ -39,8 +63,10 @@ Options:
   --keyword   Optional primary SEO keyword
   --coin      Optional coin or exchange name to focus on
   --type      Optional article type: guide, comparison, analysis, news, education, review
-  --slug      Draft slug (required for show)
+  --slug      Post slug (required for show, schedule, unschedule, publish-now)
   --topics    Topic string (repeatable for generate-many)
+  --status    Filter by status: draft, scheduled, published (for list)
+  --datetime  ISO datetime for scheduling (required for schedule)
 `);
 }
 
@@ -93,6 +119,7 @@ async function cmdGenerate(args: Map<string, string[]>): Promise<void> {
 
     const runLog: RunLog = {
       id: runId,
+      type: "generation",
       startedAt,
       finishedAt: new Date().toISOString(),
       input,
@@ -116,6 +143,7 @@ async function cmdGenerate(args: Map<string, string[]>): Promise<void> {
 
     const runLog: RunLog = {
       id: runId,
+      type: "generation",
       startedAt,
       finishedAt: new Date().toISOString(),
       input,
@@ -176,6 +204,7 @@ async function cmdGenerateMany(args: Map<string, string[]>): Promise<void> {
 
   const runLog: RunLog = {
     id: runId,
+    type: "generation",
     startedAt,
     finishedAt: new Date().toISOString(),
     input: topics.map((t) => ({ topic: t })),
@@ -193,28 +222,37 @@ async function cmdGenerateMany(args: Map<string, string[]>): Promise<void> {
   }
 }
 
-function cmdList(): void {
-  const drafts = listDrafts();
-  if (drafts.length === 0) {
-    console.log("No drafts found in data/posts/.");
+function cmdList(args: Map<string, string[]>): void {
+  const statusFilter = args.get("status")?.[0] as PostStatus | undefined;
+
+  const posts = statusFilter
+    ? listPostsByStatus(statusFilter)
+    : listPosts();
+
+  if (posts.length === 0) {
+    const label = statusFilter ? `${statusFilter} posts` : "posts";
+    console.log(`No ${label} found in data/posts/.`);
     return;
   }
 
-  console.log(`Found ${drafts.length} draft(s):\n`);
+  const label = statusFilter ? `${statusFilter} post(s)` : "post(s)";
+  console.log(`Found ${posts.length} ${label}:\n`);
   console.log(
-    "SLUG".padEnd(45) +
-      "TITLE".padEnd(50) +
-      "CATEGORY".padEnd(15) +
-      "CREATED"
+    "SLUG".padEnd(40) +
+      "TITLE".padEnd(40) +
+      "STATUS".padEnd(12) +
+      "SCHEDULED FOR".padEnd(22) +
+      "PUBLISHED AT"
   );
   console.log("-".repeat(130));
 
-  for (const draft of drafts) {
-    const slug = draft.slug.substring(0, 43).padEnd(45);
-    const title = draft.title.substring(0, 48).padEnd(50);
-    const category = draft.category.padEnd(15);
-    const created = draft.createdAt.substring(0, 19);
-    console.log(`${slug}${title}${category}${created}`);
+  for (const post of posts) {
+    const slug = post.slug.substring(0, 38).padEnd(40);
+    const title = post.title.substring(0, 38).padEnd(40);
+    const status = post.status.padEnd(12);
+    const scheduled = (post.scheduledFor ? post.scheduledFor.substring(0, 19) : "-").padEnd(22);
+    const published = post.publishedAt ? post.publishedAt.substring(0, 19) : "-";
+    console.log(`${slug}${title}${status}${scheduled}${published}`);
   }
 }
 
@@ -226,28 +264,117 @@ function cmdShow(args: Map<string, string[]>): void {
     return;
   }
 
-  const draft = loadDraft(slug);
-  if (!draft) {
-    console.error(`Draft not found: ${slug}`);
+  const post = loadPost(slug);
+  if (!post) {
+    console.error(`Post not found: ${slug}`);
     process.exitCode = 1;
     return;
   }
 
-  console.log(`Title: ${draft.title}`);
-  console.log(`Slug: ${draft.slug}`);
-  console.log(`Status: ${draft.status}`);
-  console.log(`Category: ${draft.category}`);
-  console.log(`Tags: ${draft.tags.join(", ")}`);
-  console.log(`Meta Title: ${draft.metaTitle}`);
-  console.log(`Meta Description: ${draft.metaDescription}`);
-  console.log(`Excerpt: ${draft.excerpt}`);
-  console.log(`Canonical: ${draft.canonicalPath}`);
-  console.log(`Internal Links: ${draft.internalLinks.join(", ") || "none"}`);
-  console.log(`Image Prompt: ${draft.featuredImagePrompt}`);
-  console.log(`Created: ${draft.createdAt}`);
-  console.log(`Word Count: ${draft.body.split(/\s+/).length}`);
+  console.log(`Title: ${post.title}`);
+  console.log(`Slug: ${post.slug}`);
+  console.log(`Status: ${post.status}`);
+  console.log(`Category: ${post.category}`);
+  console.log(`Tags: ${post.tags.join(", ")}`);
+  console.log(`Meta Title: ${post.metaTitle}`);
+  console.log(`Meta Description: ${post.metaDescription}`);
+  console.log(`Excerpt: ${post.excerpt}`);
+  console.log(`Canonical: ${post.canonicalPath}`);
+  console.log(`Internal Links: ${post.internalLinks.join(", ") || "none"}`);
+  console.log(`Image Prompt: ${post.featuredImagePrompt}`);
+  console.log(`Scheduled For: ${post.scheduledFor || "not scheduled"}`);
+  console.log(`Published At: ${post.publishedAt || "not published"}`);
+  console.log(`Created: ${post.createdAt}`);
+  console.log(`Word Count: ${post.body.split(/\s+/).length}`);
   console.log(`\n--- Body ---\n`);
-  console.log(draft.body);
+  console.log(post.body);
+}
+
+function cmdSchedule(args: Map<string, string[]>): void {
+  const slug = args.get("slug")?.[0];
+  const datetime = args.get("datetime")?.[0];
+  if (!slug || !datetime) {
+    console.error('Error: --slug="<slug>" and --datetime="<ISO datetime>" are required.');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const post = schedulePost(slug, datetime);
+    console.log(`[CLI] Post scheduled successfully!`);
+    console.log(`  Slug: ${post.slug}`);
+    console.log(`  Status: ${post.status}`);
+    console.log(`  Scheduled For: ${post.scheduledFor}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[CLI] Scheduling failed: ${message}`);
+    process.exitCode = 1;
+  }
+}
+
+function cmdUnschedule(args: Map<string, string[]>): void {
+  const slug = args.get("slug")?.[0];
+  if (!slug) {
+    console.error('Error: --slug="<slug>" is required.');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const post = unschedulePost(slug);
+    console.log(`[CLI] Post unscheduled successfully!`);
+    console.log(`  Slug: ${post.slug}`);
+    console.log(`  Status: ${post.status}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[CLI] Unscheduling failed: ${message}`);
+    process.exitCode = 1;
+  }
+}
+
+function cmdPublishNow(args: Map<string, string[]>): void {
+  const slug = args.get("slug")?.[0];
+  if (!slug) {
+    console.error('Error: --slug="<slug>" is required.');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const post = publishPostNow(slug);
+    console.log(`[CLI] Post published successfully!`);
+    console.log(`  Slug: ${post.slug}`);
+    console.log(`  Status: ${post.status}`);
+    console.log(`  Published At: ${post.publishedAt}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[CLI] Publishing failed: ${message}`);
+    process.exitCode = 1;
+  }
+}
+
+function cmdRunScheduled(): void {
+  console.log(`[CLI] Running scheduled publishing...`);
+  const runLog = runScheduledPublishing();
+
+  if (runLog.affectedSlugs && runLog.affectedSlugs.length > 0) {
+    console.log(`[CLI] Published ${runLog.affectedSlugs.length} post(s):`);
+    for (const slug of runLog.affectedSlugs) {
+      console.log(`  - ${slug}`);
+    }
+  } else {
+    console.log(`[CLI] No posts due for publishing.`);
+  }
+
+  if (runLog.errors.length > 0) {
+    console.error(`[CLI] Errors:`);
+    for (const err of runLog.errors) {
+      console.error(`  - ${err}`);
+    }
+  }
+
+  console.log(`  Run log: data/runs/${runLog.id}.json`);
+  console.log(`  Status: ${runLog.status}`);
 }
 
 async function main(): Promise<void> {
@@ -263,10 +390,22 @@ async function main(): Promise<void> {
       await cmdGenerateMany(args);
       break;
     case "list":
-      cmdList();
+      cmdList(args);
       break;
     case "show":
       cmdShow(args);
+      break;
+    case "schedule":
+      cmdSchedule(args);
+      break;
+    case "unschedule":
+      cmdUnschedule(args);
+      break;
+    case "publish-now":
+      cmdPublishNow(args);
+      break;
+    case "run-scheduled":
+      cmdRunScheduled();
       break;
     case "help":
     default:

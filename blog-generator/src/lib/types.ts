@@ -1,4 +1,6 @@
-export type Draft = {
+export type PostStatus = "draft" | "scheduled" | "published";
+
+export type Post = {
   title: string;
   slug: string;
   metaTitle: string;
@@ -11,8 +13,13 @@ export type Draft = {
   internalLinks: string[];
   featuredImagePrompt: string;
   createdAt: string;
-  status: "draft";
+  status: PostStatus;
+  scheduledFor: string | null;
+  publishedAt: string | null;
 };
+
+/** @deprecated Use Post instead */
+export type Draft = Post;
 
 export type GenerateInput = {
   topic: string;
@@ -21,12 +28,16 @@ export type GenerateInput = {
   articleType?: string;
 };
 
+export type RunLogType = "generation" | "scheduling" | "publishing" | "unscheduling";
+
 export type RunLog = {
   id: string;
+  type: RunLogType;
   startedAt: string;
   finishedAt: string;
-  input: GenerateInput | GenerateInput[];
-  generatedSlugs: string[];
+  input?: GenerateInput | GenerateInput[];
+  generatedSlugs?: string[];
+  affectedSlugs?: string[];
   status: "completed" | "failed" | "partial";
   errors: string[];
 };

@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import type { Draft, RunLog } from "./types";
+import type { Post, PostStatus, RunLog } from "./types";
 
 const DATA_DIR = path.resolve(__dirname, "../../data");
 const POSTS_DIR = path.join(DATA_DIR, "posts");
@@ -14,31 +14,51 @@ function ensureDir(dir: string): void {
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
-export function saveDraft(draft: Draft): void {
+export function savePost(post: Post): void {
   ensureDir(POSTS_DIR);
-  const filePath = path.join(POSTS_DIR, `${draft.slug}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(draft, null, 2), "utf-8");
+  const filePath = path.join(POSTS_DIR, `${post.slug}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(post, null, 2), "utf-8");
 }
+
+/** @deprecated Use savePost instead */
+export const saveDraft = savePost;
 
 export function slugExists(slug: string): boolean {
   const filePath = path.join(POSTS_DIR, `${slug}.json`);
   return fs.existsSync(filePath);
 }
 
-export function loadDraft(slug: string): Draft | null {
+export function loadPost(slug: string): Post | null {
   const filePath = path.join(POSTS_DIR, `${slug}.json`);
   if (!fs.existsSync(filePath)) return null;
   const raw = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(raw) as Draft;
+  return JSON.parse(raw) as Post;
 }
 
-export function listDrafts(): Draft[] {
+/** @deprecated Use loadPost instead */
+export const loadDraft = loadPost;
+
+export function listPosts(): Post[] {
   ensureDir(POSTS_DIR);
   const files = fs.readdirSync(POSTS_DIR).filter((f) => f.endsWith(".json"));
   return files.map((f) => {
     const raw = fs.readFileSync(path.join(POSTS_DIR, f), "utf-8");
-    return JSON.parse(raw) as Draft;
+    return JSON.parse(raw) as Post;
   });
+}
+
+/** @deprecated Use listPosts instead */
+export const listDrafts = listPosts;
+
+export function listPostsByStatus(status: PostStatus): Post[] {
+  return listPosts().filter((p) => p.status === status);
+}
+
+export function listScheduledDue(): Post[] {
+  const now = new Date();
+  return listPostsByStatus("scheduled").filter((p) =>
+    p.scheduledFor ? new Date(p.scheduledFor) <= now : false
+  );
 }
 
 // ─── Runs ────────────────────────────────────────────────────────────────────
