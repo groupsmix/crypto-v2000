@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FileText, Bot } from "lucide-react";
+import { FileText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { BlogManager } from "@/components/admin/blog-manager";
 
@@ -20,23 +20,8 @@ async function getBlogPosts() {
   }
 }
 
-async function getAIContentQueue() {
-  try {
-    return await prisma.automationRun.findMany({
-      where: { status: { in: ["pending", "running"] } },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    });
-  } catch {
-    return [];
-  }
-}
-
 export default async function AdminBlogPage() {
-  const [posts, aiQueue] = await Promise.all([
-    getBlogPosts(),
-    getAIContentQueue(),
-  ]);
+  const posts = await getBlogPosts();
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -51,36 +36,6 @@ export default async function AdminBlogPage() {
           </p>
         </div>
       </div>
-
-      {/* AI Content Queue */}
-      {aiQueue.length > 0 && (
-        <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 space-y-3">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <Bot className="h-4 w-4 text-blue-500" />
-            AI Content Generation Queue
-          </h3>
-          <div className="space-y-2">
-            {aiQueue.map((run) => (
-              <div
-                key={run.id}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-muted-foreground">
-                  {run.jobType} - {run.status}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(run.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <BlogManager posts={JSON.parse(JSON.stringify(posts))} />
     </div>
