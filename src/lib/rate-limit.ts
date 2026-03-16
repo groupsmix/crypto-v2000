@@ -16,11 +16,11 @@ const store = new Map<string, RateLimitEntry>();
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();
-    for (const [key, entry] of store) {
+    store.forEach((entry, key) => {
       if (entry.resetAt < now) {
         store.delete(key);
       }
-    }
+    });
   }, 60_000);
 }
 

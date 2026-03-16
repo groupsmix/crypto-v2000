@@ -1,4 +1,4 @@
-import { Worker, Job } from "bullmq";
+import { Worker, Job, type ConnectionOptions } from "bullmq";
 import { createRedisConnection } from "./connection";
 import { CONTENT_QUEUE_NAME, type ContentJobData } from "./content-queue";
 import { runContentPipeline } from "../content-engine/pipeline";
@@ -8,7 +8,7 @@ import { runContentPipeline } from "../content-engine/pipeline";
  * This processes jobs from the content-generation queue.
  */
 export function createContentWorker(): Worker<ContentJobData> {
-  const connection = createRedisConnection();
+  const connection = createRedisConnection() as unknown as ConnectionOptions;
 
   const worker = new Worker<ContentJobData>(
     CONTENT_QUEUE_NAME,

@@ -1,4 +1,4 @@
-import { Queue } from "bullmq";
+import { Queue, type ConnectionOptions } from "bullmq";
 import { createRedisConnection } from "./connection";
 
 export const CONTENT_QUEUE_NAME = "content-generation";
@@ -9,16 +9,16 @@ export type ContentJobData = {
   triggeredBy?: string; // "scheduler" | "manual"
 };
 
-let contentQueueInstance: Queue<ContentJobData> | null = null;
+let contentQueueInstance: Queue | null = null;
 
 /**
  * Get or create the content generation queue.
  * Uses a singleton pattern to avoid creating multiple connections.
  */
-export function getContentQueue(): Queue<ContentJobData> {
+export function getContentQueue(): Queue {
   if (!contentQueueInstance) {
-    const connection = createRedisConnection();
-    contentQueueInstance = new Queue<ContentJobData>(CONTENT_QUEUE_NAME, {
+    const connection = createRedisConnection() as unknown as ConnectionOptions;
+    contentQueueInstance = new Queue(CONTENT_QUEUE_NAME, {
       connection,
       defaultJobOptions: {
         attempts: 3,

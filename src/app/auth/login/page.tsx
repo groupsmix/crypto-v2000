@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
@@ -26,7 +27,9 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <LoginForm />
+          <Suspense fallback={null}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>

@@ -117,7 +117,7 @@ const categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
 
 export default function AdminSettingsPage() {
   const envVars = getEnvVarStatus();
-  const categories = [...new Set(envVars.map((v) => v.category))];
+  const categories = Array.from(new Set(envVars.map((v) => v.category)));
   const configuredCount = envVars.filter((v) => v.isSet).length;
   const requiredMissing = envVars.filter((v) => v.required && !v.isSet);
 
