@@ -1,0 +1,80 @@
+name: "Publish Scheduled Posts"
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: "Dry run (true/false) — report what would be published without making changes"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: write
+
+jobs:
+  publish-scheduled:
+    name: Publish Scheduled Posts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blog-generator
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: blog-generator/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run scheduled publishing
+        id: publish
+        run: |
+          if [ "${{ github.event.inputs.dryRun }}" = "true" ]; then
+            echo "mode=dry-run" >> "$GITHUB_OUTPUT"
+            node dist/cli.js run-scheduled --dry-run
+          else
+            echo "mode=live" >> "$GITHUB_OUTPUT"
+            node dist/cli.js run-scheduled
+          fi
+
+      - name: Check for changes
+        if: steps.publish.outputs.mode != 'dry-run'
+        id: changes
+        run: |
+          cd ..
+          if git diff --quiet -- blog-generator/data/posts/ blog-generator/data/runs/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No post files changed."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Post files changed — will commit."
+          fi
+
+      - name: Commit and push changes
+        if: steps.publish.outputs.mode != 'dry-run' && steps.changes.outputs.changed == 'true'
+        run: |
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add blog-generator/data/posts/ blog-generator/data/runs/
+          git commit -m "chore: publish scheduled posts"
+          git push

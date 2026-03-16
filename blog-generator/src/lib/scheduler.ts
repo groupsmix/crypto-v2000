@@ -74,8 +74,10 @@ export function publishPostNow(slug: string): Post {
  * Run the scheduled publishing pipeline.
  * Finds all posts with status=scheduled and scheduledFor <= now,
  * then publishes them.
+ *
+ * @param dryRun If true, reports what would be published without making changes.
  */
-export function runScheduledPublishing(): RunLog {
+export function runScheduledPublishing(dryRun = false): RunLog {
   const runId = generateRunId();
   const startedAt = new Date().toISOString();
   const affectedSlugs: string[] = [];
@@ -85,9 +87,11 @@ export function runScheduledPublishing(): RunLog {
 
   for (const post of duePosts) {
     try {
-      post.status = "published";
-      post.publishedAt = new Date().toISOString();
-      savePost(post);
+      if (!dryRun) {
+        post.status = "published";
+        post.publishedAt = new Date().toISOString();
+        savePost(post);
+      }
       affectedSlugs.push(post.slug);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -114,6 +118,8 @@ export function runScheduledPublishing(): RunLog {
     errors,
   };
 
-  saveRunLog(runLog);
+  if (!dryRun) {
+    saveRunLog(runLog);
+  }
   return runLog;
 }

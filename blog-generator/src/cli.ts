@@ -52,8 +52,9 @@ Commands:
   publish-now --slug="<slug>"
       Publish a post immediately.
 
-  run-scheduled
+  run-scheduled [--dry-run]
       Run the scheduled publishing pipeline (publish all due posts).
+      With --dry-run, reports what would be published without making changes.
 
   help
       Show this help message.
@@ -67,19 +68,27 @@ Options:
   --topics    Topic string (repeatable for generate-many)
   --status    Filter by status: draft, scheduled, published (for list)
   --datetime  ISO datetime for scheduling (required for schedule)
+  --dry-run   Dry-run mode for run-scheduled (no file changes)
 `);
 }
 
 function parseArgs(args: string[]): Map<string, string[]> {
   const parsed = new Map<string, string[]>();
   for (const arg of args) {
+    if (!arg.startsWith("--")) continue;
     const eqIndex = arg.indexOf("=");
-    if (arg.startsWith("--") && eqIndex > -1) {
+    if (eqIndex > -1) {
       const key = arg.substring(2, eqIndex);
       const value = arg.substring(eqIndex + 1).replace(/^["']|["']$/g, "");
       const existing = parsed.get(key) || [];
       existing.push(value);
       parsed.set(key, existing);
+    } else {
+      // Boolean flag (e.g. --dry-run)
+      const key = arg.substring(2);
+      if (!parsed.has(key)) {
+        parsed.set(key, ["true"]);
+      }
     }
   }
   return parsed;
@@ -353,12 +362,19 @@ function cmdPublishNow(args: Map<string, string[]>): void {
   }
 }
 
-function cmdRunScheduled(): void {
-  console.log(`[CLI] Running scheduled publishing...`);
-  const runLog = runScheduledPublishing();
+function cmdRunScheduled(args: Map<string, string[]>): void {
+  const dryRun = args.has("dry-run");
+  if (dryRun) {
+    console.log(`[CLI] Running scheduled publishing (DRY RUN)...`);
+  } else {
+    console.log(`[CLI] Running scheduled publishing...`);
+  }
+
+  const runLog = runScheduledPublishing(dryRun);
 
   if (runLog.affectedSlugs && runLog.affectedSlugs.length > 0) {
-    console.log(`[CLI] Published ${runLog.affectedSlugs.length} post(s):`);
+    const verb = dryRun ? "Would publish" : "Published";
+    console.log(`[CLI] ${verb} ${runLog.affectedSlugs.length} post(s):`);
     for (const slug of runLog.affectedSlugs) {
       console.log(`  - ${slug}`);
     }
@@ -373,7 +389,9 @@ function cmdRunScheduled(): void {
     }
   }
 
-  console.log(`  Run log: data/runs/${runLog.id}.json`);
+  if (!dryRun) {
+    console.log(`  Run log: data/runs/${runLog.id}.json`);
+  }
   console.log(`  Status: ${runLog.status}`);
 }
 
@@ -405,7 +423,7 @@ async function main(): Promise<void> {
       cmdPublishNow(args);
       break;
     case "run-scheduled":
-      cmdRunScheduled();
+      cmdRunScheduled(args);
       break;
     case "help":
     default:
