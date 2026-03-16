@@ -1,5 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // Exclude heavy packages not needed in the Cloudflare Worker bundle
+    outputFileTracingExcludes: {
+      "*": [
+        "node_modules/bullmq/**",
+        "node_modules/ioredis/**",
+        "node_modules/@swc/**",
+        "node_modules/esbuild/**",
+        "node_modules/prisma/**",
+        "node_modules/ts-node/**",
+        "node_modules/typescript/**",
+        "node_modules/eslint/**",
+        "node_modules/eslint-config-next/**",
+        "node_modules/@next/swc-*/**",
+        "node_modules/sharp/**",
+      ],
+    },
+    serverMinification: true,
+  },
   images: {
     remotePatterns: [
       {
