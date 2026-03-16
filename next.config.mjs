@@ -4,6 +4,7 @@ const nextConfig = {
     // Exclude heavy packages not needed in the Cloudflare Worker bundle
     outputFileTracingExcludes: {
       "*": [
+        "node_modules/@anthropic-ai/**",
         "node_modules/@swc/**",
         "node_modules/esbuild/**",
         "node_modules/prisma/**",

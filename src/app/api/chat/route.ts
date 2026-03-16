@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import {
   getExchangeContext,
@@ -8,6 +7,45 @@ import {
   formatBlogContext,
 } from "@/lib/chat-context";
 import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit";
+
+// Use direct fetch to Anthropic API instead of the heavy @anthropic-ai/sdk (~5 MiB)
+// to keep the Cloudflare Worker bundle under 3 MiB.
+type AnthropicMessage = { role: "user" | "assistant"; content: string };
+type AnthropicTextBlock = { type: "text"; text: string };
+type AnthropicResponse = {
+  content: AnthropicTextBlock[];
+};
+
+async function callAnthropic(
+  apiKey: string,
+  system: string,
+  messages: AnthropicMessage[],
+  maxTokens: number = 1024
+): Promise<string> {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: maxTokens,
+      system,
+      messages,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Anthropic API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as AnthropicResponse;
+  const textBlock = data.content.find((block) => block.type === "text");
+  return textBlock?.text ?? "I'm sorry, I couldn't generate a response. Please try again.";
+}
 
 
 const CHAT_RATE_LIMIT = { limit: 20, windowSeconds: 60 };
@@ -172,18 +210,7 @@ SITE PAGES:
       { role: "user", content: message },
     ];
 
-    const client = new Anthropic({ apiKey });
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages,
-    });
-
-    const textBlock = response.content.find((block) => block.type === "text");
-    const reply = textBlock && textBlock.type === "text"
-      ? textBlock.text
-      : "I'm sorry, I couldn't generate a response. Please try again.";
+    const reply = await callAnthropic(apiKey, systemPrompt, messages);
 
     // Detect intent from the response
     const intent = detectIntent(message);
