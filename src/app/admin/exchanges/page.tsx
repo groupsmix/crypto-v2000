@@ -8,7 +8,6 @@ export const metadata: Metadata = {
   description: "Create, edit, and delete exchange listings.",
 };
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 async function getExchanges() {

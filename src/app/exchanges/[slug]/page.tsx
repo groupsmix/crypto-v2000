@@ -25,7 +25,6 @@ import {
 import { siteConfig } from "@/config/site";
 import { buildClickUrl } from "@/lib/affiliate";
 
-export const runtime = "edge";
 
 interface ExchangePageProps {
   params: { slug: string };

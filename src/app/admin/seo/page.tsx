@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   description: "Monitor SEO health, sitemap, and metadata status.",
 };
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 type MetadataStatus = {

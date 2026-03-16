@@ -4,7 +4,6 @@ import { Section } from "@/components/ui/section";
 import { ComparisonTable } from "@/components/compare/comparison-table";
 import { getAllExchangesForComparison } from "@/lib/data/exchanges";
 
-export const runtime = "edge";
 
 export const metadata: Metadata = {
   title: "Compare Crypto Exchanges – Side-by-Side Fees, Features & Bonuses",

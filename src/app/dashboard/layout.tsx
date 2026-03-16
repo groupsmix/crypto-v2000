@@ -1,7 +1,6 @@
 import { Container } from "@/components/ui/container";
 import { DashboardSidebar, DashboardMobileNav } from "@/components/dashboard/dashboard-sidebar";
 
-export const runtime = "edge";
 
 export default function DashboardLayout({
   children,

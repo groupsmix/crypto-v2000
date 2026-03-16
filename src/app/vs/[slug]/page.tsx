@@ -22,7 +22,6 @@ import { getVsComparison } from "@/lib/data/vs-comparisons";
 import { type ExchangeDetail } from "@/lib/data/exchanges";
 import { generateVsVerdict, type VsVerdict } from "@/lib/vs-verdict";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
