@@ -5,10 +5,7 @@ import {
   FileText,
   BarChart3,
   Users,
-  Bot,
   MousePointerClick,
-  TrendingUp,
-  Activity,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
@@ -27,9 +24,6 @@ async function getDashboardStats() {
       publishedBlogPosts,
       totalClicks,
       totalUsers,
-      totalAutomationRuns,
-      completedRuns,
-      failedRuns,
       recentClicks,
     ] = await Promise.all([
       prisma.exchange.count(),
@@ -37,9 +31,6 @@ async function getDashboardStats() {
       prisma.blogPost.count({ where: { publishedAt: { not: null } } }),
       prisma.affiliateClick.count(),
       prisma.user.count(),
-      prisma.automationRun.count(),
-      prisma.automationRun.count({ where: { status: "completed" } }),
-      prisma.automationRun.count({ where: { status: "failed" } }),
       prisma.affiliateClick.findMany({
         take: 5,
         orderBy: { clickedAt: "desc" },
@@ -53,9 +44,6 @@ async function getDashboardStats() {
       publishedBlogPosts,
       totalClicks,
       totalUsers,
-      totalAutomationRuns,
-      completedRuns,
-      failedRuns,
       recentClicks,
     };
   } catch {
@@ -65,9 +53,6 @@ async function getDashboardStats() {
       publishedBlogPosts: 0,
       totalClicks: 0,
       totalUsers: 0,
-      totalAutomationRuns: 0,
-      completedRuns: 0,
-      failedRuns: 0,
       recentClicks: [] as { id: string; exchange: { name: string }; sourcePage: string; clickedAt: Date }[],
     };
   }
@@ -147,30 +132,6 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      {/* Second Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          icon={Bot}
-          label="Automation Runs"
-          value={stats.totalAutomationRuns}
-          href="/admin/automation"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Completed Jobs"
-          value={stats.completedRuns}
-          href="/admin/automation"
-          color="text-green-500"
-        />
-        <StatCard
-          icon={Activity}
-          label="Failed Jobs"
-          value={stats.failedRuns}
-          href="/admin/automation"
-          color="text-red-500"
-        />
-      </div>
-
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Affiliate Activity */}
@@ -222,7 +183,6 @@ export default async function AdminDashboardPage() {
               { title: "Manage Exchanges", href: "/admin/exchanges", icon: Database },
               { title: "Write Blog Post", href: "/admin/blog", icon: FileText },
               { title: "View Analytics", href: "/admin/affiliate", icon: BarChart3 },
-              { title: "Run Automation", href: "/admin/automation", icon: Bot },
             ].map((action) => (
               <Link
                 key={action.href}

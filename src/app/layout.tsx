@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ThemeScript } from "@/components/ui/theme-script";
-import { ChatWidget } from "@/components/chat/chat-widget";
 import { SessionProvider } from "@/components/auth/session-provider";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
@@ -117,7 +116,6 @@ export default function RootLayout({
           <Header />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
-          <ChatWidget />
         </SessionProvider>
       </body>
     </html>
