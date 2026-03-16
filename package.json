@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "npx opennextjs-cloudflare build && mkdir -p .open-next/assets/_worker.js && cp .open-next/worker.js .open-next/assets/_worker.js/index.js && cp -r .open-next/cloudflare .open-next/assets/_worker.js/ && cp -r .open-next/middleware .open-next/assets/_worker.js/ && cp -r .open-next/.build .open-next/assets/_worker.js/",
+    "pages:build": "npx opennextjs-cloudflare build && mkdir -p .open-next/assets/_worker.js && cp .open-next/worker.js .open-next/assets/_worker.js/index.js && cp -r .open-next/server-functions .open-next/assets/_worker.js/ && cp -r .open-next/cloudflare .open-next/assets/_worker.js/ && cp -r .open-next/middleware .open-next/assets/_worker.js/ && cp -r .open-next/.build .open-next/assets/_worker.js/",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
