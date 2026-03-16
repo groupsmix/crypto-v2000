@@ -1,4 +1,4 @@
-import type { Draft, GenerateInput } from "./types";
+import type { Post, GenerateInput } from "./types";
 import { insertInternalLinks, buildImagePrompt } from "./linker";
 import { toSlug, ensureUniqueSlug, validateDraft } from "./validator";
 
@@ -50,7 +50,7 @@ After the article content, provide the following metadata in a JSON block wrappe
 function parseResponse(
   raw: string,
   input: GenerateInput
-): Omit<Draft, "createdAt" | "status"> {
+): Omit<Post, "createdAt" | "status" | "scheduledFor" | "publishedAt"> {
   const jsonMatch = raw.match(/```json\s*([\s\S]*?)```/);
 
   let metadata = {
@@ -132,7 +132,7 @@ function parseResponse(
  * Generate a single blog draft from a topic input.
  * Uses the Anthropic Messages API via direct HTTP fetch.
  */
-export async function generateDraft(input: GenerateInput): Promise<Draft> {
+export async function generateDraft(input: GenerateInput): Promise<Post> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
@@ -173,10 +173,12 @@ export async function generateDraft(input: GenerateInput): Promise<Draft> {
 
   const parsed = parseResponse(textBlock.text, input);
 
-  const draft: Draft = {
+  const draft: Post = {
     ...parsed,
     createdAt: new Date().toISOString(),
     status: "draft",
+    scheduledFor: null,
+    publishedAt: null,
   };
 
   // Validate the draft

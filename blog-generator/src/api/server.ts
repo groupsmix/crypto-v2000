@@ -1,8 +1,20 @@
 import "dotenv/config";
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import { generateDraft } from "../lib/generator";
-import { saveDraft, listDrafts, loadDraft, saveRunLog } from "../lib/storage";
+import {
+  saveDraft,
+  listPosts,
+  listPostsByStatus,
+  loadPost,
+  saveRunLog,
+} from "../lib/storage";
 import { validateInput } from "../lib/validator";
+import {
+  schedulePost,
+  unschedulePost,
+  publishPostNow,
+  runScheduledPublishing,
+} from "../lib/scheduler";
 import type { GenerateInput, RunLog } from "../lib/types";
 
 const PORT = parseInt(process.env.PORT || "4100", 10);
@@ -61,8 +73,8 @@ async function handleGetPosts(
   }
 
   try {
-    const drafts = listDrafts();
-    json(res, 200, { posts: drafts, count: drafts.length });
+    const posts = listPosts();
+    json(res, 200, { posts, count: posts.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     json(res, 500, { error: message });
@@ -80,12 +92,12 @@ async function handleGetPostBySlug(
   }
 
   try {
-    const draft = loadDraft(slug);
-    if (!draft) {
+    const post = loadPost(slug);
+    if (!post) {
       json(res, 404, { error: `Post with slug "${slug}" not found` });
       return;
     }
-    json(res, 200, { post: draft });
+    json(res, 200, { post });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     json(res, 500, { error: message });
@@ -170,6 +182,7 @@ async function handleTrigger(
 
     const runLog: RunLog = {
       id: runId,
+      type: "generation",
       startedAt,
       finishedAt: new Date().toISOString(),
       input: inputs.length === 1 ? inputs[0] : inputs,
@@ -193,6 +206,7 @@ async function handleTrigger(
 
     const runLog: RunLog = {
       id: runId,
+      type: "generation",
       startedAt,
       finishedAt: new Date().toISOString(),
       input: [],
@@ -203,6 +217,146 @@ async function handleTrigger(
     saveRunLog(runLog);
 
     json(res, 500, { success: false, error: message });
+  }
+}
+
+// ─── Scheduling & Publishing Handlers ────────────────────────────────────────
+
+async function handleSchedule(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  if (req.method !== "POST") {
+    json(res, 405, { error: "Method not allowed" });
+    return;
+  }
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const rawBody = await parseBody(req);
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    if (!body.slug || !body.scheduledFor) {
+      json(res, 400, { error: '"slug" and "scheduledFor" are required' });
+      return;
+    }
+    const post = schedulePost(body.slug, body.scheduledFor);
+    json(res, 200, { success: true, post: { slug: post.slug, status: post.status, scheduledFor: post.scheduledFor } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    json(res, 400, { error: message });
+  }
+}
+
+async function handleUnschedule(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  if (req.method !== "POST") {
+    json(res, 405, { error: "Method not allowed" });
+    return;
+  }
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const rawBody = await parseBody(req);
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    if (!body.slug) {
+      json(res, 400, { error: '"slug" is required' });
+      return;
+    }
+    const post = unschedulePost(body.slug);
+    json(res, 200, { success: true, post: { slug: post.slug, status: post.status } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    json(res, 400, { error: message });
+  }
+}
+
+async function handlePublishNow(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  if (req.method !== "POST") {
+    json(res, 405, { error: "Method not allowed" });
+    return;
+  }
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const rawBody = await parseBody(req);
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    if (!body.slug) {
+      json(res, 400, { error: '"slug" is required' });
+      return;
+    }
+    const post = publishPostNow(body.slug);
+    json(res, 200, { success: true, post: { slug: post.slug, status: post.status, publishedAt: post.publishedAt } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    json(res, 400, { error: message });
+  }
+}
+
+async function handleRunScheduled(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  if (req.method !== "POST") {
+    json(res, 405, { error: "Method not allowed" });
+    return;
+  }
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const runLog = runScheduledPublishing();
+    json(res, 200, {
+      success: runLog.status !== "failed",
+      runId: runLog.id,
+      affectedSlugs: runLog.affectedSlugs,
+      status: runLog.status,
+      errors: runLog.errors.length > 0 ? runLog.errors : undefined,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    json(res, 500, { error: message });
+  }
+}
+
+async function handleGetScheduled(
+  _req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const posts = listPostsByStatus("scheduled");
+    json(res, 200, { posts, count: posts.length });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    json(res, 500, { error: message });
+  }
+}
+
+async function handleGetPublished(
+  _req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const posts = listPostsByStatus("published");
+    json(res, 200, { posts, count: posts.length });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    json(res, 500, { error: message });
   }
 }
 
@@ -236,6 +390,18 @@ const server = createServer(async (req, res) => {
       }
     } else if (pathname === "/api/trigger") {
       await handleTrigger(req, res);
+    } else if (pathname === "/api/schedule") {
+      await handleSchedule(req, res);
+    } else if (pathname === "/api/unschedule") {
+      await handleUnschedule(req, res);
+    } else if (pathname === "/api/publish-now") {
+      await handlePublishNow(req, res);
+    } else if (pathname === "/api/run-scheduled") {
+      await handleRunScheduled(req, res);
+    } else if (pathname === "/api/scheduled") {
+      await handleGetScheduled(req, res);
+    } else if (pathname === "/api/published") {
+      await handleGetPublished(req, res);
     } else {
       json(res, 404, { error: "Not found" });
     }
@@ -249,10 +415,16 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`[BlogGenerator] Server running on http://localhost:${PORT}`);
   console.log(`[BlogGenerator] Endpoints:`);
-  console.log(`  GET  /health          - Health check`);
-  console.log(`  GET  /api/posts       - List all drafts`);
-  console.log(`  GET  /api/posts/:slug - Get draft by slug`);
-  console.log(`  POST /api/trigger     - Generate draft(s)`);
+  console.log(`  GET  /health            - Health check`);
+  console.log(`  GET  /api/posts         - List all posts`);
+  console.log(`  GET  /api/posts/:slug   - Get post by slug`);
+  console.log(`  POST /api/trigger       - Generate draft(s)`);
+  console.log(`  POST /api/schedule      - Schedule a post`);
+  console.log(`  POST /api/unschedule    - Unschedule a post`);
+  console.log(`  POST /api/publish-now   - Publish a post immediately`);
+  console.log(`  POST /api/run-scheduled - Run scheduled publishing`);
+  console.log(`  GET  /api/scheduled     - List scheduled posts`);
+  console.log(`  GET  /api/published     - List published posts`);
 });
 
 // Graceful shutdown
