@@ -10,7 +10,6 @@ import {
   XCircle,
 } from "lucide-react";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {

@@ -6,7 +6,6 @@ import {
   type ClicksBySource,
 } from "@/lib/data/affiliate-analytics";
 
-export const runtime = "edge";
 
 export const metadata: Metadata = {
   title: "Affiliate Analytics",

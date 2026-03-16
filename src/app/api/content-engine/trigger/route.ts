@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { runContentPipeline } from "@/lib/content-engine/pipeline";
 
-export const runtime = "edge";
 
 /**
  * POST /api/content-engine/trigger
@@ -11,11 +9,11 @@ export const runtime = "edge";
  * Manually trigger the content generation pipeline.
  * Requires admin authentication.
  *
- * Supports two modes:
- * - "queue": Add to BullMQ queue (requires worker running)
- * - "direct": Run pipeline directly in this request (default)
+ * Runs the pipeline directly in this request.
+ * For queue-based execution, use the standalone worker process
+ * (npm run worker:start) which uses BullMQ + ioredis (Node.js only).
  *
- * Body: { topicLimit?: number, publishAsDraft?: boolean, mode?: "queue" | "direct" }
+ * Body: { topicLimit?: number, publishAsDraft?: boolean }
  */
 export async function POST(request: Request) {
   // Require admin authentication
@@ -28,22 +26,11 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const topicLimit = typeof body.topicLimit === "number" ? body.topicLimit : 3;
     const publishAsDraft = body.publishAsDraft !== false;
-    const mode = body.mode === "queue" ? "queue" : "direct";
 
-    if (mode === "queue") {
-      // Dynamic import to avoid loading BullMQ in serverless environments
-      const { triggerManualJob } = await import("@/lib/queue/content-queue");
-      const jobId = await triggerManualJob({ topicLimit, publishAsDraft });
-
-      return NextResponse.json({
-        success: true,
-        mode: "queue",
-        jobId,
-        message: "Job added to queue. It will be processed by the worker.",
-      });
-    }
-
-    // Direct execution mode
+    // Dynamic import to avoid pulling Node.js-only content-engine deps into the edge bundle at build time
+    const { runContentPipeline } = await import(
+      "@/lib/content-engine/pipeline"
+    );
     const result = await runContentPipeline({ topicLimit, publishAsDraft });
 
     return NextResponse.json({
