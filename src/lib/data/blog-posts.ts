@@ -1,4 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import {
+  fetchPublishedPosts,
+  fetchPublishedPostBySlug,
+  fetchPublishedCategories,
+  fetchPublishedTags,
+} from "./blog-source";
 
 export type BlogPostPreview = {
   slug: string;
@@ -23,6 +29,7 @@ export type BlogPostFull = {
   tags: string[];
   publishedAt: Date | null;
   createdAt: Date;
+  canonicalPath?: string | null;
 };
 
 const fallbackPosts: BlogPostPreview[] = [
@@ -520,6 +527,13 @@ Neither CeFi nor DeFi is inherently better. The best choice depends on your expe
 export async function getLatestBlogPosts(
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
+  // Try Project 1 (Blog Generator) first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    return sourcePosts.slice(0, limit);
+  }
+
+  // Fall back to Prisma database
   try {
     const posts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null } },
@@ -552,6 +566,14 @@ export async function getAllBlogPosts(options?: {
   tag?: string;
   search?: string;
 }): Promise<BlogPostPreview[]> {
+  // Try Project 1 (Blog Generator) first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    const filtered = applyFilters(sourcePosts, options);
+    return filtered;
+  }
+
+  // Fall back to Prisma database
   try {
     const where: Record<string, unknown> = {
       publishedAt: { not: null },
@@ -601,12 +623,11 @@ export async function getAllBlogPosts(options?: {
   }
 }
 
-function applyFallbackFilters(options?: {
-  category?: string;
-  tag?: string;
-  search?: string;
-}): BlogPostPreview[] {
-  return fallbackPosts.filter((post) => {
+function applyFilters(
+  posts: BlogPostPreview[],
+  options?: { category?: string; tag?: string; search?: string }
+): BlogPostPreview[] {
+  return posts.filter((post) => {
     if (options?.category && post.category !== options.category) return false;
     if (options?.tag && !post.tags.includes(options.tag)) return false;
     if (options?.search) {
@@ -622,9 +643,24 @@ function applyFallbackFilters(options?: {
   });
 }
 
+function applyFallbackFilters(options?: {
+  category?: string;
+  tag?: string;
+  search?: string;
+}): BlogPostPreview[] {
+  return applyFilters(fallbackPosts, options);
+}
+
 export async function getBlogPostBySlug(
   slug: string
 ): Promise<BlogPostFull | null> {
+  // Try Project 1 (Blog Generator) first
+  const sourcePost = await fetchPublishedPostBySlug(slug);
+  if (sourcePost) {
+    return sourcePost;
+  }
+
+  // Fall back to Prisma database
   try {
     const post = await prisma.blogPost.findUnique({
       where: { slug },
@@ -646,6 +682,26 @@ export async function getRelatedPosts(
   tags: string[],
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
+  // Try Project 1 (Blog Generator) first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    const related = sourcePosts
+      .filter((p) => p.slug !== currentSlug)
+      .filter(
+        (p) =>
+          (category && p.category === category) ||
+          (tags.length > 0 && p.tags.some((t) => tags.includes(t)))
+      )
+      .slice(0, limit);
+
+    if (related.length > 0) return related;
+    // If no related by category/tag, return other published posts
+    return sourcePosts
+      .filter((p) => p.slug !== currentSlug)
+      .slice(0, limit);
+  }
+
+  // Fall back to Prisma database
   try {
     const orConditions = [
       ...(category ? [{ category }] : []),
@@ -687,6 +743,13 @@ export async function getRelatedPosts(
 }
 
 export async function getAllCategories(): Promise<string[]> {
+  // Try Project 1 (Blog Generator) first
+  const sourceCats = await fetchPublishedCategories();
+  if (sourceCats && sourceCats.length > 0) {
+    return sourceCats;
+  }
+
+  // Fall back to Prisma database
   try {
     const posts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null }, category: { not: null } },
@@ -709,6 +772,13 @@ export async function getAllCategories(): Promise<string[]> {
 }
 
 export async function getAllTags(): Promise<string[]> {
+  // Try Project 1 (Blog Generator) first
+  const sourceTags = await fetchPublishedTags();
+  if (sourceTags && sourceTags.length > 0) {
+    return sourceTags;
+  }
+
+  // Fall back to Prisma database
   try {
     const posts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null } },
