@@ -5,20 +5,18 @@
   "description": "Lightweight AI blog generation service for CryptoCompare AI",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/api/server.js",
     "generate": "node dist/cli.js",
-    "dev": "ts-node src/server.ts",
+    "dev": "ts-node src/api/server.ts",
     "dev:generate": "ts-node src/cli.ts",
+    "dev:list": "ts-node src/cli.ts list",
     "lint": "eslint src/ --ext .ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
-    "dotenv": "^17.3.1",
-    "pg": "^8.20.0"
+    "dotenv": "^17.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.19.37",
-    "@types/pg": "^8.15.4",
     "@typescript-eslint/eslint-plugin": "^7",
     "@typescript-eslint/parser": "^7",
     "eslint": "^8",

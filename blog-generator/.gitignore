@@ -8,10 +8,11 @@ dist/
 .env
 .env*.local
 
-# Data (local storage, generated content)
-data/*.json
-data/*.csv
-!data/.gitkeep
+# Generated data (keep structure, ignore generated content)
+data/posts/*.json
+data/runs/*.json
+!data/posts/.gitkeep
+!data/runs/.gitkeep
 
 # OS
 .DS_Store
