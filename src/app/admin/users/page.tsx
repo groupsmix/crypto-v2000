@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: "View and manage user accounts.",
 };
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 async function getUsers() {

@@ -10,6 +10,9 @@ import {
   XCircle,
 } from "lucide-react";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Platform Settings",
   description: "Configure API keys, environment variables, and platform settings.",

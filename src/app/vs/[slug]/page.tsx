@@ -18,29 +18,18 @@ import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { buildClickUrl } from "@/lib/affiliate";
-import {
-  getVsComparison,
-  getAllVsPairs,
-} from "@/lib/data/vs-comparisons";
+import { getVsComparison } from "@/lib/data/vs-comparisons";
 import { type ExchangeDetail } from "@/lib/data/exchanges";
 import { generateVsVerdict, type VsVerdict } from "@/lib/vs-verdict";
 
 export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface VsPageProps {
   params: { slug: string };
 }
-
-// ─── Static Generation ─────────────────────────────────────────────────────────
-
-export async function generateStaticParams() {
-  const pairs = await getAllVsPairs();
-  return pairs.map((slug) => ({ slug }));
-}
-
-export const revalidate = 3600; // ISR: revalidate every hour
 
 // ─── SEO Metadata ──────────────────────────────────────────────────────────────
 

@@ -5,6 +5,9 @@ import { Section } from "@/components/ui/section";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Conversation Detail | Admin",
   description: "View conversation details.",
