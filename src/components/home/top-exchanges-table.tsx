@@ -101,7 +101,7 @@ export function TopExchangesTable({
                     <td className="px-6 py-4 text-right">
                       <Button asChild size="sm" variant="outline">
                         <a
-                          href={buildClickUrl(exchange.id, "homepage")}
+                          href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "homepage", sourcePath: "/" })}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -152,7 +152,7 @@ export function TopExchangesTable({
                 <div className="pl-8">
                   <Button asChild size="sm" className="w-full">
                     <a
-                      href={buildClickUrl(exchange.id, "homepage")}
+                      href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "homepage", sourcePath: "/" })}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

@@ -69,7 +69,7 @@ export function FeaturedExchanges({
                 {/* CTA */}
                 <Button asChild size="sm" className="w-full">
                   <a
-                    href={buildClickUrl(exchange.id, "homepage-featured")}
+                    href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "homepage-featured", sourcePath: "/" })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

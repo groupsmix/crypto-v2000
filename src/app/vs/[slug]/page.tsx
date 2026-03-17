@@ -333,7 +333,7 @@ export default async function VsPage({ params }: PageProps) {
                 )}
                 <Button asChild className="w-full">
                   <a
-                    href={buildClickUrl(exchange.id, "vs-page")}
+                    href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}` })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -643,7 +643,7 @@ export default async function VsPage({ params }: PageProps) {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button asChild size="lg">
                   <a
-                    href={buildClickUrl(a.id, "vs-page")}
+                    href={buildClickUrl({ exchangeSlug: a.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}` })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -654,7 +654,7 @@ export default async function VsPage({ params }: PageProps) {
                 </Button>
                 <Button asChild size="lg" variant="outline">
                   <a
-                    href={buildClickUrl(b.id, "vs-page")}
+                    href={buildClickUrl({ exchangeSlug: b.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}` })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

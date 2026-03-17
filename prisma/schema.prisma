@@ -68,16 +68,32 @@ model ExchangeOffer {
 // ─── AffiliateClick ─────────────────────────────────────────────────────────────
 
 model AffiliateClick {
-  id          String   @id @default(cuid())
-  exchangeId  String   @map("exchange_id")
-  sourcePage  String   @map("source_page")
-  clickedAt   DateTime @default(now()) @map("clicked_at")
-  userId      String?  @map("user_id")
-  ipHash      String   @map("ip_hash")
+  id               String   @id @default(cuid())
+  exchangeId       String   @map("exchange_id")
+  exchangeSlug     String   @default("") @map("exchange_slug")
+  sourcePage       String   @map("source_page")
+  sourceType       String   @default("unknown") @map("source_type")
+  sourcePath       String   @default("") @map("source_path")
+  destinationUrl   String   @default("") @map("destination_url")
+  campaignTag      String?  @map("campaign_tag")
+  clickedAt        DateTime @default(now()) @map("clicked_at")
+  userId           String?  @map("user_id")
+  ipHash           String   @map("ip_hash")
+  userAgent        String?  @map("user_agent")
+  referrer         String?  @map("referrer")
+  country          String?  @map("country")
 
-  exchange    Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Revenue placeholders (for future conversion/revenue import)
+  conversionCount  Int?     @map("conversion_count")
+  estimatedRevenue Float?   @map("estimated_revenue")
+  networkName      String?  @map("network_name")
 
+  exchange         Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([exchangeSlug])
+  @@index([sourceType])
+  @@index([clickedAt])
   @@map("affiliate_clicks")
 }
 

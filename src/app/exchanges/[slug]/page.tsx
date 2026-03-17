@@ -249,7 +249,7 @@ export default async function ExchangePage({ params }: ExchangePageProps) {
             </div>
             <Button asChild size="lg" className="w-full sm:w-auto">
               <a
-                href={buildClickUrl(exchange.id, "exchange-detail")}
+                href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "exchange-detail", sourcePath: `/exchanges/${exchange.slug}` })}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -317,7 +317,7 @@ export default async function ExchangePage({ params }: ExchangePageProps) {
               </div>
               <Button asChild size="sm" className="w-full sm:w-auto shrink-0">
                 <a
-                  href={buildClickUrl(exchange.id, "exchange-detail-offer")}
+                  href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "exchange-detail-offer", sourcePath: `/exchanges/${exchange.slug}` })}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
