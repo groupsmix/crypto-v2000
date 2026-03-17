@@ -29,10 +29,14 @@ export async function generateMetadata({
   const description =
     post.metaDescription ||
     post.content.replace(/[#*\[\]|`-]/g, "").trim().slice(0, 160);
+  const canonicalPath = post.canonicalPath || `/blog/${post.slug}`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
       title: `${title} | ${siteConfig.name}`,
       description,
@@ -40,6 +44,7 @@ export async function generateMetadata({
       publishedTime: post.publishedAt?.toISOString(),
       authors: [siteConfig.name],
       tags: post.tags,
+      url: `${siteConfig.url}${canonicalPath}`,
       ...(post.featuredImage ? { images: [post.featuredImage] } : {}),
     },
   };
@@ -52,6 +57,7 @@ function ArticleSchema({
 }: {
   post: {
     title: string;
+    slug: string;
     content: string;
     metaDescription: string | null;
     featuredImage: string | null;
@@ -59,8 +65,10 @@ function ArticleSchema({
     createdAt: Date;
     category: string | null;
     tags: string[];
+    canonicalPath?: string | null;
   };
 }) {
+  const canonical = post.canonicalPath || `/blog/${post.slug}`;
   const schema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -83,8 +91,9 @@ function ArticleSchema({
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${siteConfig.url}/blog`,
+      "@id": `${siteConfig.url}${canonical}`,
     },
+    url: `${siteConfig.url}${canonical}`,
     keywords: post.tags.join(", "),
     ...(post.category
       ? { articleSection: post.category }

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { fetchPublishedPosts, fetchPostBySlug } from "@/lib/blog-source";
 
 export type BlogPostPreview = {
   slug: string;
@@ -23,6 +24,7 @@ export type BlogPostFull = {
   tags: string[];
   publishedAt: Date | null;
   createdAt: Date;
+  canonicalPath?: string | null;
 };
 
 const fallbackPosts: BlogPostPreview[] = [
@@ -520,6 +522,12 @@ Neither CeFi nor DeFi is inherently better. The best choice depends on your expe
 export async function getLatestBlogPosts(
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
+  // Try Project 1 blog source first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    return sourcePosts.slice(0, limit);
+  }
+
   try {
     const posts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null } },
@@ -552,6 +560,12 @@ export async function getAllBlogPosts(options?: {
   tag?: string;
   search?: string;
 }): Promise<BlogPostPreview[]> {
+  // Try Project 1 blog source first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    return applySourceFilters(sourcePosts, options);
+  }
+
   try {
     const where: Record<string, unknown> = {
       publishedAt: { not: null },
@@ -601,12 +615,11 @@ export async function getAllBlogPosts(options?: {
   }
 }
 
-function applyFallbackFilters(options?: {
-  category?: string;
-  tag?: string;
-  search?: string;
-}): BlogPostPreview[] {
-  return fallbackPosts.filter((post) => {
+function applySourceFilters(
+  posts: BlogPostPreview[],
+  options?: { category?: string; tag?: string; search?: string }
+): BlogPostPreview[] {
+  return posts.filter((post) => {
     if (options?.category && post.category !== options.category) return false;
     if (options?.tag && !post.tags.includes(options.tag)) return false;
     if (options?.search) {
@@ -622,9 +635,21 @@ function applyFallbackFilters(options?: {
   });
 }
 
+function applyFallbackFilters(options?: {
+  category?: string;
+  tag?: string;
+  search?: string;
+}): BlogPostPreview[] {
+  return applySourceFilters(fallbackPosts, options);
+}
+
 export async function getBlogPostBySlug(
   slug: string
 ): Promise<BlogPostFull | null> {
+  // Try Project 1 blog source first
+  const sourcePost = await fetchPostBySlug(slug);
+  if (sourcePost) return sourcePost;
+
   try {
     const post = await prisma.blogPost.findUnique({
       where: { slug },
@@ -646,6 +671,21 @@ export async function getRelatedPosts(
   tags: string[],
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
+  // Try Project 1 blog source first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    const related = sourcePosts
+      .filter((p) => p.slug !== currentSlug)
+      .filter(
+        (p) => p.category === category || p.tags.some((t) => tags.includes(t))
+      )
+      .slice(0, limit);
+    if (related.length > 0) return related;
+    return sourcePosts
+      .filter((p) => p.slug !== currentSlug)
+      .slice(0, limit);
+  }
+
   try {
     const orConditions = [
       ...(category ? [{ category }] : []),
@@ -687,6 +727,16 @@ export async function getRelatedPosts(
 }
 
 export async function getAllCategories(): Promise<string[]> {
+  // Try Project 1 blog source first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    const cats = new Set<string>();
+    for (const p of sourcePosts) {
+      if (p.category) cats.add(p.category);
+    }
+    if (cats.size > 0) return Array.from(cats).sort();
+  }
+
   try {
     const posts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null }, category: { not: null } },
@@ -709,6 +759,16 @@ export async function getAllCategories(): Promise<string[]> {
 }
 
 export async function getAllTags(): Promise<string[]> {
+  // Try Project 1 blog source first
+  const sourcePosts = await fetchPublishedPosts();
+  if (sourcePosts && sourcePosts.length > 0) {
+    const tagSet = new Set<string>();
+    for (const p of sourcePosts) {
+      for (const t of p.tags) tagSet.add(t);
+    }
+    if (tagSet.size > 0) return Array.from(tagSet).sort();
+  }
+
   try {
     const posts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null } },
