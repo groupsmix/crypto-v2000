@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllExchangeSlugs, getAllVsPairs } from "@/lib/data/vs-comparisons";
 import { prisma } from "@/lib/prisma";
+import { getTopCoins } from "@/lib/price-service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://cryptocompare.ai";
 
@@ -70,5 +71,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...exchangePages, ...vsPages, ...blogPages];
+  // Coin price pages
+  let coinIds: string[] = [];
+  try {
+    const coins = await getTopCoins();
+    coinIds = coins.map((c) => c.id);
+  } catch {
+    coinIds = [];
+  }
+
+  const coinPages: MetadataRoute.Sitemap = coinIds.map((id) => ({
+    url: `${BASE_URL}/prices/${id}`,
+    lastModified: now,
+    changeFrequency: "hourly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...exchangePages, ...vsPages, ...blogPages, ...coinPages];
 }

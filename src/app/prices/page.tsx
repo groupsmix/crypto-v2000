@@ -1,14 +1,33 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Section } from "@/components/ui/section";
 import { getTopCoins } from "@/lib/price-service";
 import { PricesTable } from "@/components/prices/prices-table";
-import { Coins } from "lucide-react";
+import { siteConfig } from "@/config/site";
+import { Coins, ArrowLeftRight, BookOpen } from "lucide-react";
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cryptocompare.ai";
 
 export const metadata: Metadata = {
   title: "Crypto Prices — Top 200 Coins by Market Cap",
   description:
     "Live cryptocurrency prices for the top 200 coins. Track Bitcoin, Ethereum, and altcoin prices with 24h changes, market cap, volume, and 7-day sparkline charts.",
+  alternates: {
+    canonical: "/prices",
+  },
+  openGraph: {
+    title: `Crypto Prices | ${siteConfig.name}`,
+    description:
+      "Live cryptocurrency prices for the top 200 coins. Track Bitcoin, Ethereum, and altcoin prices with 24h changes, market cap, volume, and 7-day sparkline charts.",
+    type: "website",
+    url: `${siteUrl}/prices`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Crypto Prices | ${siteConfig.name}`,
+    description:
+      "Live cryptocurrency prices for the top 200 coins by market cap.",
+  },
 };
 
 export const revalidate = 600; // ISR: revalidate every 10 minutes
@@ -68,6 +87,24 @@ export default async function PricesPage() {
             Prices updated every 10 minutes. Data provided by CoinGecko with
             CryptoCompare fallback.
           </p>
+
+          {/* Internal Links */}
+          <div className="flex flex-wrap justify-center gap-3 pt-4">
+            <Link
+              href="/compare"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+              Compare Exchanges
+            </Link>
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Crypto Blog
+            </Link>
+          </div>
         </div>
       </Section>
     </>

@@ -71,10 +71,49 @@ export async function generateMetadata({
     alternates: {
       canonical: `/vs/${slug}`,
     },
+    twitter: {
+      card: "summary_large_image",
+      title: `${a.name} vs ${b.name} | ${siteConfig.name}`,
+      description,
+    },
   };
 }
 
 // ─── JSON-LD Schema ────────────────────────────────────────────────────────────
+
+function VsBreadcrumbSchema({ a, b, slug }: { a: ExchangeDetail; b: ExchangeDetail; slug: string }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteConfig.url,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Compare Exchanges",
+        item: `${siteConfig.url}/compare`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `${a.name} vs ${b.name}`,
+        item: `${siteConfig.url}/vs/${slug}`,
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
 
 function VsSchema({
   a,
@@ -272,6 +311,7 @@ export default async function VsPage({ params }: PageProps) {
   return (
     <>
       <VsSchema a={a} b={b} verdict={verdict} slug={slug} />
+      <VsBreadcrumbSchema a={a} b={b} slug={slug} />
 
       <Section>
         <div className="space-y-10 max-w-5xl mx-auto">
