@@ -5,6 +5,9 @@ import { getTopCoins } from "@/lib/price-service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://cryptocompare.ai";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 300; // 5-minute ISR — new posts appear in sitemap quickly
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
