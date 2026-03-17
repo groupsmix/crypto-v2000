@@ -22,6 +22,7 @@ export async function PUT(
         category: body.category || null,
         tags: body.tags || [],
         publishedAt: body.publish ? (body.publishedAt ? new Date(body.publishedAt) : new Date()) : null,
+        scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : null,
       },
     });
 

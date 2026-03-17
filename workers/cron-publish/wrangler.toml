@@ -1,0 +1,10 @@
+name = "cron-publish"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Run every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Set these via: wrangler secret put SITE_URL / wrangler secret put CRON_SECRET
+# Or configure in Cloudflare dashboard → Worker → Settings → Variables

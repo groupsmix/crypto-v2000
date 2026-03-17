@@ -15,8 +15,11 @@ type BlogPost = {
   category: string | null;
   tags: string[];
   publishedAt: string | null;
+  scheduledFor: string | null;
   createdAt: string;
 };
+
+type PublishMode = "draft" | "now" | "scheduled";
 
 type PostFormData = {
   title: string;
@@ -27,7 +30,8 @@ type PostFormData = {
   featuredImage: string;
   category: string;
   tags: string;
-  publish: boolean;
+  publishMode: PublishMode;
+  scheduledFor: string;
 };
 
 function getEmptyForm(): PostFormData {
@@ -40,11 +44,19 @@ function getEmptyForm(): PostFormData {
     featuredImage: "",
     category: "",
     tags: "",
-    publish: false,
+    publishMode: "draft",
+    scheduledFor: "",
   };
 }
 
 function postToForm(post: BlogPost): PostFormData {
+  let publishMode: PublishMode = "draft";
+  if (post.publishedAt) {
+    publishMode = "now";
+  } else if (post.scheduledFor) {
+    publishMode = "scheduled";
+  }
+
   return {
     title: post.title,
     slug: post.slug,
@@ -54,7 +66,10 @@ function postToForm(post: BlogPost): PostFormData {
     featuredImage: post.featuredImage || "",
     category: post.category || "",
     tags: post.tags.join(", "),
-    publish: post.publishedAt !== null,
+    publishMode,
+    scheduledFor: post.scheduledFor
+      ? new Date(post.scheduledFor).toISOString().slice(0, 16)
+      : "",
   };
 }
 
@@ -64,6 +79,8 @@ function formatDate(date: string | null): string {
     month: "short",
     day: "numeric",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -110,16 +127,30 @@ export function BlogManager({ posts: initialPosts }: { posts: BlogPost[] }) {
       const method = isCreating ? "POST" : "PUT";
 
       const payload = {
-        ...form,
+        title: form.title,
+        slug: form.slug,
+        content: form.content,
+        metaTitle: form.metaTitle,
+        metaDescription: form.metaDescription,
+        featuredImage: form.featuredImage,
+        category: form.category,
         tags: form.tags
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
+        publish: form.publishMode === "now",
+        scheduledFor:
+          form.publishMode === "scheduled" && form.scheduledFor
+            ? new Date(form.scheduledFor).toISOString()
+            : null,
       };
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Password": window.__ADMIN_PW ?? "",
+        },
         body: JSON.stringify(payload),
       });
 
@@ -150,7 +181,10 @@ export function BlogManager({ posts: initialPosts }: { posts: BlogPost[] }) {
     if (!confirm("Are you sure you want to delete this blog post?")) return;
 
     try {
-      const res = await fetch(`/api/admin/blog/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/blog/${id}`, {
+        method: "DELETE",
+        headers: { "X-Admin-Password": window.__ADMIN_PW ?? "" },
+      });
 
       if (!res.ok) {
         const data = await res.json();
@@ -269,15 +303,53 @@ export function BlogManager({ posts: initialPosts }: { posts: BlogPost[] }) {
             />
           </label>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.publish}
-              onChange={(e) => updateForm("publish", e.target.checked)}
-              className="rounded border-input"
-            />
-            <span className="text-sm">Publish immediately</span>
-          </label>
+          <div className="space-y-3">
+            <span className="text-xs font-medium text-muted-foreground">Publish</span>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="publishMode"
+                  checked={form.publishMode === "draft"}
+                  onChange={() => updateForm("publishMode", "draft")}
+                  className="border-input"
+                />
+                <span className="text-sm">Save as Draft</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="publishMode"
+                  checked={form.publishMode === "now"}
+                  onChange={() => updateForm("publishMode", "now")}
+                  className="border-input"
+                />
+                <span className="text-sm">Publish Now</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="publishMode"
+                  checked={form.publishMode === "scheduled"}
+                  onChange={() => updateForm("publishMode", "scheduled")}
+                  className="border-input"
+                />
+                <span className="text-sm">Schedule</span>
+              </label>
+            </div>
+
+            {form.publishMode === "scheduled" && (
+              <label className="block space-y-1">
+                <span className="text-xs font-medium text-muted-foreground">Scheduled Date &amp; Time</span>
+                <input
+                  type="datetime-local"
+                  value={form.scheduledFor}
+                  onChange={(e) => updateForm("scheduledFor", e.target.value)}
+                  className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </label>
+            )}
+          </div>
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" size="sm" onClick={cancel}>
@@ -330,6 +402,10 @@ export function BlogManager({ posts: initialPosts }: { posts: BlogPost[] }) {
                       {post.publishedAt ? (
                         <span className="inline-flex items-center h-5 px-2 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                           Published
+                        </span>
+                      ) : post.scheduledFor ? (
+                        <span className="inline-flex items-center h-5 px-2 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          Scheduled {formatDate(post.scheduledFor)}
                         </span>
                       ) : (
                         <span className="inline-flex items-center h-5 px-2 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">

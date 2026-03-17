@@ -17,6 +17,7 @@ export async function POST(request: Request) {
         category: body.category || null,
         tags: body.tags || [],
         publishedAt: body.publish ? new Date() : null,
+        scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : null,
       },
     });
 
