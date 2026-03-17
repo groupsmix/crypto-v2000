@@ -5,6 +5,23 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // --- Protect /api/admin routes with X-Admin-Password header ---
+  // NOTE: This check MUST come before the /admin check because
+  // "/api/admin" also starts with "/admin" and would otherwise
+  // be caught by the Basic Auth block.
+  if (pathname.startsWith("/api/admin")) {
+    if (!ADMIN_PASSWORD) {
+      return NextResponse.next();
+    }
+
+    const headerPassword = request.headers.get("x-admin-password");
+    if (headerPassword === ADMIN_PASSWORD) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   // --- Protect /admin pages with Basic Auth ---
   if (pathname.startsWith("/admin")) {
     if (!ADMIN_PASSWORD) {
@@ -29,20 +46,6 @@ export function middleware(request: NextRequest) {
       status: 401,
       headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
     });
-  }
-
-  // --- Protect /api/admin routes with X-Admin-Password header ---
-  if (pathname.startsWith("/api/admin")) {
-    if (!ADMIN_PASSWORD) {
-      return NextResponse.next();
-    }
-
-    const headerPassword = request.headers.get("x-admin-password");
-    if (headerPassword === ADMIN_PASSWORD) {
-      return NextResponse.next();
-    }
-
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   return NextResponse.next();
