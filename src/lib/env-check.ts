@@ -28,8 +28,8 @@ export function validateEnv(): { valid: boolean; missing: string[] } {
       hint: "Required for caching. Without it, every API call hits the origin.",
     },
     {
-      key: "ANTHROPIC_API_KEY",
-      hint: "Required for AI content generation and chat features.",
+      key: "BLOG_SOURCE_URL",
+      hint: "Required for fetching published blog posts from the blog generator service.",
     },
   ];
 
