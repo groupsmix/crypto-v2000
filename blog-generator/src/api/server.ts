@@ -363,7 +363,13 @@ async function handleGetPublished(
 // ─── Server ───────────────────────────────────────────────────────────────────
 
 const server = createServer(async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://cryptoranked.xyz")
+    .split(",")
+    .map((o) => o.trim());
+  const origin = req.headers.origin || "";
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 

@@ -49,10 +49,15 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ exchange });
+    return NextResponse.json({ exchange }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update exchange";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }
 
@@ -67,9 +72,14 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete exchange";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

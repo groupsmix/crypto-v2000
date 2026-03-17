@@ -40,9 +40,14 @@ export async function POST(request: Request) {
       await onBlogPostPublished(post.slug).catch(() => {});
     }
 
-    return NextResponse.json({ post });
+    return NextResponse.json({ post }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create post";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

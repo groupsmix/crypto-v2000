@@ -294,7 +294,7 @@ export default async function VsPage({ params }: PageProps) {
   }
 
   const { exchangeA: a, exchangeB: b } = data;
-  const verdict = generateVsVerdict(a, b);
+  const verdict = await generateVsVerdict(a, b);
 
   const year = new Date().getFullYear();
   const aOffer = a.offers.find((o) => o.isActive);
