@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { onBlogPostPublished } from "@/lib/publish-event";
 
 
 async function requireAdminApi() {
@@ -39,6 +40,11 @@ export async function PUT(
         publishedAt: body.publish ? (body.publishedAt ? new Date(body.publishedAt) : new Date()) : null,
       },
     });
+
+    // Fire publish event if the post was just published
+    if (body.publish && post.slug) {
+      await onBlogPostPublished(post.slug).catch(() => {});
+    }
 
     return NextResponse.json({ post });
   } catch (error) {
