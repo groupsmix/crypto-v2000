@@ -13,29 +13,42 @@ import {
   Coins,
   Shield,
   Zap,
+  Lock,
+  ChevronDown,
+  BookOpen,
+  BarChart3,
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { buildClickUrl } from "@/lib/affiliate";
-import { getVsComparison } from "@/lib/data/vs-comparisons";
+import { getVsComparison, getAllVsPairs } from "@/lib/data/vs-comparisons";
 import { type ExchangeDetail } from "@/lib/data/exchanges";
 import { generateVsVerdict, type VsVerdict } from "@/lib/vs-verdict";
+import { getRelatedPosts } from "@/lib/data/blog-posts";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // ISR: revalidate every hour
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-interface VsPageProps {
-  params: { slug: string };
+type PageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+// ─── Static Generation ──────────────────────────────────────────────────────────
+
+export async function generateStaticParams() {
+  const pairs = await getAllVsPairs();
+  return pairs.map((slug) => ({ slug }));
 }
 
 // ─── SEO Metadata ──────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
-}: VsPageProps): Promise<Metadata> {
-  const data = await getVsComparison(params.slug);
+}: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const data = await getVsComparison(slug);
   if (!data) {
     return { title: "Comparison Not Found" };
   }
@@ -53,10 +66,10 @@ export async function generateMetadata({
       title: `${a.name} vs ${b.name} | ${siteConfig.name}`,
       description,
       type: "article",
-      url: `${siteConfig.url}/vs/${params.slug}`,
+      url: `${siteConfig.url}/vs/${slug}`,
     },
     alternates: {
-      canonical: `${siteConfig.url}/vs/${params.slug}`,
+      canonical: `/vs/${slug}`,
     },
   };
 }
@@ -105,32 +118,14 @@ function VsSchema({
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `Which is better, ${a.name} or ${b.name}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: verdict.summary,
-        },
+    mainEntity: verdict.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
       },
-      {
-        "@type": "Question",
-        name: `Which has lower fees, ${a.name} or ${b.name}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: verdict.forFees.reason,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Which is better for beginners, ${a.name} or ${b.name}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: verdict.forBeginners.reason,
-        },
-      },
-    ],
+    })),
   };
 
   return (
@@ -236,10 +231,25 @@ function VerdictCard({
   );
 }
 
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  return (
+    <details className="group rounded-xl border border-border/60 bg-card overflow-hidden">
+      <summary className="flex items-center justify-between cursor-pointer px-5 py-4 text-sm font-semibold hover:bg-muted/20 transition-colors">
+        {question}
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-2 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+        {answer}
+      </div>
+    </details>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
-export default async function VsPage({ params }: VsPageProps) {
-  const data = await getVsComparison(params.slug);
+export default async function VsPage({ params }: PageProps) {
+  const { slug } = await params;
+  const data = await getVsComparison(slug);
   if (!data) {
     notFound();
   }
@@ -251,10 +261,17 @@ export default async function VsPage({ params }: VsPageProps) {
   const aOffer = a.offers.find((o) => o.isActive);
   const bOffer = b.offers.find((o) => o.isActive);
 
-  // Determine highlights for each comparison row
+  // Fetch related blog posts
+  const relatedPosts = await getRelatedPosts(
+    "",
+    null,
+    [a.name.toLowerCase(), b.name.toLowerCase(), a.slug, b.slug, "exchange", "comparison"],
+    3
+  );
+
   return (
     <>
-      <VsSchema a={a} b={b} verdict={verdict} slug={params.slug} />
+      <VsSchema a={a} b={b} verdict={verdict} slug={slug} />
 
       <Section>
         <div className="space-y-10 max-w-5xl mx-auto">
@@ -316,7 +333,7 @@ export default async function VsPage({ params }: VsPageProps) {
                 )}
                 <Button asChild className="w-full">
                   <a
-                    href={buildClickUrl(exchange.id, "vs-comparison")}
+                    href={buildClickUrl(exchange.id, "vs-page")}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -519,7 +536,13 @@ export default async function VsPage({ params }: VsPageProps) {
                     label="KYC Required"
                     valueA={<BoolCell value={a.kycRequired} />}
                     valueB={<BoolCell value={b.kycRequired} />}
-                    highlight={null}
+                    highlight={
+                      a.kycRequired !== b.kycRequired
+                        ? a.kycRequired
+                          ? "b"
+                          : "a"
+                        : null
+                    }
                   />
                   <ComparisonRow
                     label="Spot Trading"
@@ -556,7 +579,7 @@ export default async function VsPage({ params }: VsPageProps) {
             </div>
           </div>
 
-          {/* ── AI Verdict Section ────────────────────────────────── */}
+          {/* ── Verdict Section ────────────────────────────────── */}
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold tracking-tight">
@@ -587,6 +610,12 @@ export default async function VsPage({ params }: VsPageProps) {
                 reason={verdict.forFees.reason}
               />
               <VerdictCard
+                icon={Lock}
+                label="Best for Privacy"
+                winner={verdict.forPrivacy.winner}
+                reason={verdict.forPrivacy.reason}
+              />
+              <VerdictCard
                 icon={Shield}
                 label="Best Coin Variety"
                 winner={verdict.forCoinVariety.winner}
@@ -601,7 +630,7 @@ export default async function VsPage({ params }: VsPageProps) {
             </div>
           </div>
 
-          {/* ── CTA Section ───────────────────────────────────────── */}
+          {/* ── CTA Section (after verdict) ────────────────────────── */}
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 sm:p-8">
             <div className="text-center space-y-4">
               <h2 className="text-xl font-bold">
@@ -614,27 +643,67 @@ export default async function VsPage({ params }: VsPageProps) {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button asChild size="lg">
                   <a
-                    href={buildClickUrl(a.id, "vs-comparison")}
+                    href={buildClickUrl(a.id, "vs-page")}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     Open {a.name}
+                    {aOffer?.bonusAmount ? ` — $${aOffer.bonusAmount.toLocaleString()} Bonus` : ""}
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
                   <a
-                    href={buildClickUrl(b.id, "vs-comparison")}
+                    href={buildClickUrl(b.id, "vs-page")}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     Open {b.name}
+                    {bOffer?.bonusAmount ? ` — $${bOffer.bonusAmount.toLocaleString()} Bonus` : ""}
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </div>
             </div>
           </div>
+
+          {/* ── FAQ Section ────────────────────────────────────────── */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold tracking-tight">
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-3">
+              {verdict.faqs.map((faq, i) => (
+                <FaqItem key={i} question={faq.question} answer={faq.answer} />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Related Blog Posts ─────────────────────────────────── */}
+          {relatedPosts.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-primary" />
+                Related Articles
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedPosts.map((post) => (
+                  <Link
+                    key={post.slug}
+                    href={`/blog/${post.slug}`}
+                    className="rounded-xl border border-border/60 bg-card p-4 space-y-2 hover:bg-muted/20 transition-colors"
+                  >
+                    <h3 className="text-sm font-semibold line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {post.metaDescription || post.content.slice(0, 120)}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Internal Links ────────────────────────────────────── */}
           <div className="rounded-xl border border-border/60 bg-card p-6 space-y-4">
@@ -660,6 +729,20 @@ export default async function VsPage({ params }: VsPageProps) {
               >
                 <Star className="h-4 w-4 text-primary shrink-0" />
                 {b.name} Full Review
+              </Link>
+              <Link
+                href="/prices"
+                className="flex items-center gap-2 rounded-lg p-3 bg-muted/30 hover:bg-muted/60 transition-colors text-sm font-medium"
+              >
+                <BarChart3 className="h-4 w-4 text-primary shrink-0" />
+                Live Crypto Prices
+              </Link>
+              <Link
+                href="/blog"
+                className="flex items-center gap-2 rounded-lg p-3 bg-muted/30 hover:bg-muted/60 transition-colors text-sm font-medium"
+              >
+                <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                Crypto Blog &amp; Guides
               </Link>
             </div>
           </div>
