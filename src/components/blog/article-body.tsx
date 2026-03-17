@@ -38,8 +38,9 @@ const affiliateExchanges = [
   { id: "bybit", name: "Bybit", offer: "Deposit bonus up to $30,000", slug: "bybit" },
 ];
 
-function AffiliateCta({ index }: { index: number }) {
+function AffiliateCta({ index, slug }: { index: number; slug?: string }) {
   const exchange = affiliateExchanges[index % affiliateExchanges.length];
+  const sourcePath = slug ? `/blog/${slug}` : "/blog";
 
   return (
     <div className="my-8 rounded-xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
@@ -58,7 +59,7 @@ function AffiliateCta({ index }: { index: number }) {
         </div>
         <Button asChild size="sm" className="w-full sm:w-auto shrink-0">
           <a
-            href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "blog-post", sourcePath: "/blog" })}
+            href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "blog-post", sourcePath, pageType: "blog-post" })}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -89,7 +90,7 @@ function parseInline(text: string): string {
 }
 
 /** Convert markdown content to rendered sections with affiliate CTAs */
-export function ArticleBody({ content }: { content: string }) {
+export function ArticleBody({ content, slug }: { content: string; slug?: string }) {
   const lines = content.split("\n");
   const sections: React.ReactNode[] = [];
   let ctaCount = 0;
@@ -196,7 +197,7 @@ export function ArticleBody({ content }: { content: string }) {
 
       // Insert affiliate CTA every 3 sections
       if (sectionCount > 0 && sectionCount % 3 === 0) {
-        sections.push(<AffiliateCta key={`cta-${ctaCount}`} index={ctaCount} />);
+        sections.push(<AffiliateCta key={`cta-${ctaCount}`} index={ctaCount} slug={slug} />);
         ctaCount++;
       }
 
@@ -303,7 +304,7 @@ export function ArticleBody({ content }: { content: string }) {
   flushTable();
 
   // Add final affiliate CTA
-  sections.push(<AffiliateCta key={`cta-final`} index={ctaCount} />);
+  sections.push(<AffiliateCta key={`cta-final`} index={ctaCount} slug={slug} />);
 
   return <div className="space-y-4">{sections}</div>;
 }

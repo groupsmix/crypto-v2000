@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Calendar, Tag, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, Tag, Clock, ExternalLink } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { ArticleBody, extractHeadings } from "@/components/blog/article-body";
 import { TableOfContents } from "@/components/blog/table-of-contents";
 import { RelatedPosts } from "@/components/blog/related-posts";
 import { getBlogPostBySlug, getRelatedPosts } from "@/lib/data/blog-posts";
 import { siteConfig } from "@/config/site";
+import { buildClickUrl } from "@/lib/affiliate";
 
 
 interface BlogPostPageProps {
@@ -276,7 +277,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Article body */}
             <article className="lg:col-span-3">
-              <ArticleBody content={post.content} />
+              <ArticleBody content={post.content} slug={post.slug} />
             </article>
 
             {/* Sidebar */}
@@ -284,36 +285,41 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               {/* Table of Contents */}
               <TableOfContents items={headings} />
 
-              {/* Quick links to exchange pages */}
-              <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-                <h3 className="text-sm font-semibold">Popular Exchanges</h3>
-                <ul className="space-y-2">
+              {/* Exchange affiliate CTAs */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
+                <h3 className="text-sm font-semibold">Top Exchanges</h3>
+                <div className="space-y-2">
                   {[
-                    { name: "Binance", slug: "binance" },
-                    { name: "Coinbase", slug: "coinbase" },
-                    { name: "Kraken", slug: "kraken" },
-                    { name: "KuCoin", slug: "kucoin" },
-                    { name: "Bybit", slug: "bybit" },
+                    { name: "Binance", slug: "binance", incentive: "20% fee discount" },
+                    { name: "Coinbase", slug: "coinbase", incentive: "$10 BTC bonus" },
+                    { name: "Bybit", slug: "bybit", incentive: "Up to $30K bonus" },
                   ].map((ex) => (
-                    <li key={ex.slug}>
-                      <Link
-                        href={`/exchanges/${ex.slug}`}
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold">
-                          {ex.name.charAt(0)}
-                        </span>
-                        {ex.name} Review
-                      </Link>
-                    </li>
+                    <a
+                      key={ex.slug}
+                      href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "blog-sidebar", sourcePath: `/blog/${post.slug}`, pageType: "blog-post" })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-card p-2.5 transition-all hover:shadow-sm hover:border-primary/30"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold">
+                        {ex.name.charAt(0)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold">{ex.name}</p>
+                        <p className="text-[10px] text-green-600">{ex.incentive}</p>
+                      </div>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                    </a>
                   ))}
-                </ul>
-                <Link
-                  href="/compare"
-                  className="block text-xs text-primary hover:underline"
-                >
-                  Compare all exchanges &rarr;
-                </Link>
+                </div>
+                <div className="space-y-1.5">
+                  <Link
+                    href="/compare"
+                    className="block text-xs text-primary hover:underline"
+                  >
+                    Compare all exchanges &rarr;
+                  </Link>
+                </div>
               </div>
             </aside>
           </div>

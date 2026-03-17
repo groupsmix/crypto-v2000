@@ -368,6 +368,48 @@ export default async function CoinDetailPage({ params }: PageProps) {
             />
           </div>
 
+          {/* Buy [Coin] CTA Section */}
+          {(() => {
+            const topExchanges = exchanges.filter((ex) => ex.slug).slice(0, 3);
+            if (topExchanges.length === 0) return null;
+            return (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+                <div className="space-y-4">
+                  <div className="text-center space-y-1">
+                    <h2 className="text-lg font-bold">
+                      Buy {coin.name} ({coin.symbol.toUpperCase()})
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Trade {coin.symbol.toUpperCase()} on these trusted exchanges with competitive fees.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {topExchanges.map((ex) => (
+                      <a
+                        key={ex.slug}
+                        href={buildClickUrl({ exchangeSlug: ex.slug!, sourceType: "prices-page-cta", sourcePath: `/prices/${coinId}`, pageType: "prices-page" })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-4 transition-all hover:shadow-md hover:border-primary/30"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold">
+                          {ex.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold">{ex.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Buy {coin.symbol.toUpperCase()}
+                          </p>
+                        </div>
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Price Chart */}
           {chartData && chartData.prices.length > 0 && (
             <PriceChart prices={chartData.prices} />
@@ -440,12 +482,12 @@ export default async function CoinDetailPage({ params }: PageProps) {
                           <td className="py-3 px-4 text-right">
                             {ex.slug ? (
                               <a
-                                href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "prices-page", sourcePath: `/prices/${coinId}` })}
+                                href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "prices-page", sourcePath: `/prices/${coinId}`, pageType: "prices-page" })}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
                                 <Button size="sm" variant="default" className="h-7 text-xs">
-                                  Visit Exchange
+                                  Buy {coin.symbol.toUpperCase()}
                                 </Button>
                               </a>
                             ) : ex.tradeUrl ? (
