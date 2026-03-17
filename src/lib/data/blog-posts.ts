@@ -1,3 +1,18 @@
+/**
+ * Blog data layer — unified access to all blog content sources.
+ *
+ * Data priority (highest to lowest):
+ *   1. Prisma DB — admin-managed posts via /admin/blog (source of truth for edits)
+ *   2. Blog-source — external blog-generator service (env: BLOG_SOURCE_URL)
+ *   3. Fallback — hardcoded seed posts shown when both sources are empty
+ *
+ * Posts from sources 1 & 2 are merged and deduplicated by slug.
+ * When the same slug exists in both, the Prisma version wins (admin edits take precedence).
+ *
+ * Required env vars for blog-source integration:
+ *   BLOG_SOURCE_URL    — base URL of the blog-generator service
+ *   BLOG_SOURCE_SECRET — Bearer token matching the service's API_SECRET
+ */
 import { prisma } from "@/lib/prisma";
 import { fetchPublishedPosts, fetchPostBySlug } from "@/lib/blog-source";
 
@@ -517,22 +532,49 @@ Neither CeFi nor DeFi is inherently better. The best choice depends on your expe
   },
 ];
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Merge blog-source posts and Prisma posts, deduplicating by slug.
+ * Prisma posts take precedence when a slug exists in both (admin edits win).
+ */
+function mergePosts(sourcePosts: BlogPostPreview[], dbPosts: BlogPostPreview[]): BlogPostPreview[] {
+  const slugSet = new Set<string>();
+  const merged: BlogPostPreview[] = [];
+
+  // DB posts first (admin-managed content takes precedence)
+  for (const p of dbPosts) {
+    slugSet.add(p.slug);
+    merged.push(p);
+  }
+  // Then blog-source posts that aren't already in DB
+  for (const p of sourcePosts) {
+    if (!slugSet.has(p.slug)) {
+      merged.push(p);
+    }
+  }
+
+  // Sort by publishedAt descending
+  merged.sort(
+    (a, b) =>
+      new Date(b.publishedAt ?? 0).getTime() -
+      new Date(a.publishedAt ?? 0).getTime()
+  );
+
+  return merged;
+}
+
 // ─── Query Functions ────────────────────────────────────────────────────────────
 
 export async function getLatestBlogPosts(
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
-  // Try Project 1 blog source first
   const sourcePosts = await fetchPublishedPosts();
-  if (sourcePosts && sourcePosts.length > 0) {
-    return sourcePosts.slice(0, limit);
-  }
 
   try {
-    const posts = await prisma.blogPost.findMany({
+    const dbPosts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null } },
       orderBy: { publishedAt: "desc" },
-      take: limit,
       select: {
         slug: true,
         title: true,
@@ -545,12 +587,15 @@ export async function getLatestBlogPosts(
       },
     });
 
-    if (posts.length === 0) {
+    const merged = mergePosts(sourcePosts ?? [], dbPosts);
+    if (merged.length === 0) {
       return fallbackPosts.slice(0, limit);
     }
-
-    return posts;
+    return merged.slice(0, limit);
   } catch {
+    if (sourcePosts && sourcePosts.length > 0) {
+      return sourcePosts.slice(0, limit);
+    }
     return fallbackPosts.slice(0, limit);
   }
 }
@@ -560,11 +605,7 @@ export async function getAllBlogPosts(options?: {
   tag?: string;
   search?: string;
 }): Promise<BlogPostPreview[]> {
-  // Try Project 1 blog source first
   const sourcePosts = await fetchPublishedPosts();
-  if (sourcePosts && sourcePosts.length > 0) {
-    return applySourceFilters(sourcePosts, options);
-  }
 
   try {
     const where: Record<string, unknown> = {
@@ -586,7 +627,7 @@ export async function getAllBlogPosts(options?: {
       ];
     }
 
-    const posts = await prisma.blogPost.findMany({
+    const dbPosts = await prisma.blogPost.findMany({
       where,
       orderBy: { publishedAt: "desc" },
       select: {
@@ -601,16 +642,23 @@ export async function getAllBlogPosts(options?: {
       },
     });
 
-    if (posts.length === 0 && !options?.category && !options?.tag && !options?.search) {
+    // Merge both sources, then apply filters to the source-only posts
+    const filteredSource = applySourceFilters(sourcePosts ?? [], options);
+    const merged = mergePosts(filteredSource, dbPosts);
+
+    if (merged.length === 0 && !options?.category && !options?.tag && !options?.search) {
       return fallbackPosts;
     }
 
-    if (posts.length === 0) {
+    if (merged.length === 0) {
       return applyFallbackFilters(options);
     }
 
-    return posts;
+    return merged;
   } catch {
+    if (sourcePosts && sourcePosts.length > 0) {
+      return applySourceFilters(sourcePosts, options);
+    }
     return applyFallbackFilters(options);
   }
 }
@@ -671,20 +719,7 @@ export async function getRelatedPosts(
   tags: string[],
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
-  // Try Project 1 blog source first
   const sourcePosts = await fetchPublishedPosts();
-  if (sourcePosts && sourcePosts.length > 0) {
-    const related = sourcePosts
-      .filter((p) => p.slug !== currentSlug)
-      .filter(
-        (p) => p.category === category || p.tags.some((t) => tags.includes(t))
-      )
-      .slice(0, limit);
-    if (related.length > 0) return related;
-    return sourcePosts
-      .filter((p) => p.slug !== currentSlug)
-      .slice(0, limit);
-  }
 
   try {
     const orConditions = [
@@ -692,14 +727,13 @@ export async function getRelatedPosts(
       ...(tags.length > 0 ? [{ tags: { hasSome: tags } }] : []),
     ];
 
-    const posts = await prisma.blogPost.findMany({
+    const dbPosts = await prisma.blogPost.findMany({
       where: {
         slug: { not: currentSlug },
         publishedAt: { not: null },
         ...(orConditions.length > 0 ? { OR: orConditions } : {}),
       },
       orderBy: { publishedAt: "desc" },
-      take: limit,
       select: {
         slug: true,
         title: true,
@@ -712,14 +746,34 @@ export async function getRelatedPosts(
       },
     });
 
-    if (posts.length === 0) {
+    const filteredSource = (sourcePosts ?? [])
+      .filter((p) => p.slug !== currentSlug)
+      .filter(
+        (p) => p.category === category || p.tags.some((t) => tags.includes(t))
+      );
+
+    const merged = mergePosts(filteredSource, dbPosts);
+
+    if (merged.length === 0) {
       return fallbackPosts
         .filter((p) => p.slug !== currentSlug)
         .slice(0, limit);
     }
 
-    return posts;
+    return merged.slice(0, limit);
   } catch {
+    if (sourcePosts && sourcePosts.length > 0) {
+      const related = sourcePosts
+        .filter((p) => p.slug !== currentSlug)
+        .filter(
+          (p) => p.category === category || p.tags.some((t) => tags.includes(t))
+        )
+        .slice(0, limit);
+      if (related.length > 0) return related;
+      return sourcePosts
+        .filter((p) => p.slug !== currentSlug)
+        .slice(0, limit);
+    }
     return fallbackPosts
       .filter((p) => p.slug !== currentSlug)
       .slice(0, limit);
@@ -727,69 +781,70 @@ export async function getRelatedPosts(
 }
 
 export async function getAllCategories(): Promise<string[]> {
-  // Try Project 1 blog source first
   const sourcePosts = await fetchPublishedPosts();
-  if (sourcePosts && sourcePosts.length > 0) {
-    const cats = new Set<string>();
-    for (const p of sourcePosts) {
-      if (p.category) cats.add(p.category);
-    }
-    if (cats.size > 0) return Array.from(cats).sort();
-  }
 
   try {
-    const posts = await prisma.blogPost.findMany({
+    const dbPosts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null }, category: { not: null } },
       select: { category: true },
       distinct: ["category"],
     });
 
-    const categories = posts
-      .map((p) => p.category)
-      .filter((c): c is string => c !== null);
+    const cats = new Set<string>();
+    for (const p of dbPosts) {
+      if (p.category) cats.add(p.category);
+    }
+    for (const p of sourcePosts ?? []) {
+      if (p.category) cats.add(p.category);
+    }
 
-    if (categories.length === 0) {
+    if (cats.size === 0) {
       return getUniqueFallbackCategories();
     }
 
-    return categories;
+    return Array.from(cats).sort();
   } catch {
+    if (sourcePosts && sourcePosts.length > 0) {
+      const cats = new Set<string>();
+      for (const p of sourcePosts) {
+        if (p.category) cats.add(p.category);
+      }
+      if (cats.size > 0) return Array.from(cats).sort();
+    }
     return getUniqueFallbackCategories();
   }
 }
 
 export async function getAllTags(): Promise<string[]> {
-  // Try Project 1 blog source first
   const sourcePosts = await fetchPublishedPosts();
-  if (sourcePosts && sourcePosts.length > 0) {
-    const tagSet = new Set<string>();
-    for (const p of sourcePosts) {
-      for (const t of p.tags) tagSet.add(t);
-    }
-    if (tagSet.size > 0) return Array.from(tagSet).sort();
-  }
 
   try {
-    const posts = await prisma.blogPost.findMany({
+    const dbPosts = await prisma.blogPost.findMany({
       where: { publishedAt: { not: null } },
       select: { tags: true },
     });
 
     const tagSet = new Set<string>();
-    for (const post of posts) {
-      for (const tag of post.tags) {
-        tagSet.add(tag);
-      }
+    for (const post of dbPosts) {
+      for (const tag of post.tags) tagSet.add(tag);
+    }
+    for (const p of sourcePosts ?? []) {
+      for (const t of p.tags) tagSet.add(t);
     }
 
-    const tags = Array.from(tagSet).sort();
-
-    if (tags.length === 0) {
+    if (tagSet.size === 0) {
       return getUniqueFallbackTags();
     }
 
-    return tags;
+    return Array.from(tagSet).sort();
   } catch {
+    if (sourcePosts && sourcePosts.length > 0) {
+      const tagSet = new Set<string>();
+      for (const p of sourcePosts) {
+        for (const t of p.tags) tagSet.add(t);
+      }
+      if (tagSet.size > 0) return Array.from(tagSet).sort();
+    }
     return getUniqueFallbackTags();
   }
 }

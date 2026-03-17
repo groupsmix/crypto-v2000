@@ -10,8 +10,18 @@ import type { BlogPostPreview, BlogPostFull } from "@/lib/data/blog-posts";
 // ─── Configuration ───────────────────────────────────────────────────────────
 
 const BLOG_SOURCE_URL = process.env.BLOG_SOURCE_URL || "";
+const BLOG_SOURCE_SECRET = process.env.BLOG_SOURCE_SECRET || "";
 
 const REVALIDATE_SECONDS = 300; // 5-minute ISR cache
+
+/** Build common fetch headers (auth + cache). */
+function sourceHeaders(): HeadersInit {
+  const headers: Record<string, string> = {};
+  if (BLOG_SOURCE_SECRET) {
+    headers["Authorization"] = `Bearer ${BLOG_SOURCE_SECRET}`;
+  }
+  return headers;
+}
 
 // ─── Project 1 Post Shape ────────────────────────────────────────────────────
 
@@ -76,6 +86,7 @@ export async function fetchPublishedPosts(): Promise<BlogPostPreview[] | null> {
 
   try {
     const res = await fetch(`${BLOG_SOURCE_URL}/api/published`, {
+      headers: sourceHeaders(),
       next: { revalidate: REVALIDATE_SECONDS },
     });
 
@@ -108,6 +119,7 @@ export async function fetchPostBySlug(
 
   try {
     const res = await fetch(`${BLOG_SOURCE_URL}/api/posts/${encodeURIComponent(slug)}`, {
+      headers: sourceHeaders(),
       next: { revalidate: REVALIDATE_SECONDS },
     });
 
