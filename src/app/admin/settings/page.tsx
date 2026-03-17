@@ -70,32 +70,25 @@ function getEnvVarStatus(): EnvVarConfig[] {
       isSet: !!process.env.UPSTASH_REDIS_REST_TOKEN,
     },
     {
-      name: "REDIS_URL",
-      description: "TCP Redis connection for BullMQ job queue",
+      name: "BLOG_SOURCE_URL",
+      description: "Blog generator API URL for fetching published posts",
       required: false,
-      category: "Queue",
-      isSet: !!process.env.REDIS_URL,
+      category: "Integrations",
+      isSet: !!process.env.BLOG_SOURCE_URL,
     },
     {
-      name: "ANTHROPIC_API_KEY",
-      description: "API key for Claude AI content generation",
+      name: "BLOG_GENERATOR_URL",
+      description: "Blog generator service URL for triggering generation",
       required: false,
-      category: "AI / Content Engine",
-      isSet: !!process.env.ANTHROPIC_API_KEY,
+      category: "Integrations",
+      isSet: !!process.env.BLOG_GENERATOR_URL,
     },
     {
-      name: "NEWSAPI_KEY",
-      description: "NewsAPI key for trending topic discovery",
+      name: "BLOG_GENERATOR_SECRET",
+      description: "Shared secret for authenticating blog generator requests",
       required: false,
-      category: "AI / Content Engine",
-      isSet: !!process.env.NEWSAPI_KEY,
-    },
-    {
-      name: "HUGGINGFACE_API_KEY",
-      description: "Hugging Face API key for image generation",
-      required: false,
-      category: "AI / Content Engine",
-      isSet: !!process.env.HUGGINGFACE_API_KEY,
+      category: "Integrations",
+      isSet: !!process.env.BLOG_GENERATOR_SECRET,
     },
   ];
 }
@@ -113,8 +106,7 @@ const categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
   Authentication: Shield,
   Application: Globe,
   Cache: Server,
-  Queue: Server,
-  "AI / Content Engine": Key,
+  Integrations: Server,
 };
 
 export default function AdminSettingsPage() {

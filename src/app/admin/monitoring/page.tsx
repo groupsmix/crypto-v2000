@@ -9,6 +9,7 @@ import {
   XCircle,
   Clock,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
@@ -307,6 +308,59 @@ async function getAffiliateData(): Promise<AffiliateData> {
   }
 }
 
+// ─── Trend System Health ─────────────────────────────────────────────────────
+
+type TrendData = {
+  topCoinsAvailable: boolean;
+  coinCount: number;
+  priceDataFresh: boolean;
+  lastCheckError: string | null;
+};
+
+async function getTrendHealth(): Promise<TrendData> {
+  let topCoinsAvailable = false;
+  let coinCount = 0;
+  let priceDataFresh = false;
+  let lastCheckError: string | null = null;
+
+  // Check if top coins cache is populated
+  try {
+    const cached = await redis.get("ps:top-coins");
+    if (cached) {
+      const coins = typeof cached === "string" ? JSON.parse(cached) : cached;
+      if (Array.isArray(coins) && coins.length > 0) {
+        topCoinsAvailable = true;
+        coinCount = coins.length;
+        priceDataFresh = true;
+      }
+    }
+  } catch {
+    lastCheckError = "Failed to read trend cache";
+  }
+
+  // If cache is empty, try a live check to see if APIs respond
+  if (!topCoinsAvailable) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch("https://api.coingecko.com/api/v3/ping", {
+        signal: controller.signal,
+        cache: "no-store",
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        lastCheckError = "Cache empty but API reachable — data will populate on next request";
+      } else {
+        lastCheckError = `Cache empty and API returned HTTP ${res.status}`;
+      }
+    } catch {
+      lastCheckError = "Cache empty and price API unreachable";
+    }
+  }
+
+  return { topCoinsAvailable, coinCount, priceDataFresh, lastCheckError };
+}
+
 // ─── UI Components ──────────────────────────────────────────────────────────
 
 function StatusBadge({ ok, label }: { ok: boolean; label?: string }) {
@@ -364,11 +418,12 @@ function SectionCard({
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default async function MonitoringPage() {
-  const [blogData, cacheHealth, apiHealth, affiliateData] = await Promise.all([
+  const [blogData, cacheHealth, apiHealth, affiliateData, trendHealth] = await Promise.all([
     getBlogData(),
     getCacheHealth(),
     getApiHealth(),
     getAffiliateData(),
+    getTrendHealth(),
   ]);
 
   const hasApiFailures = apiHealth.some((a) => !a.reachable);
@@ -378,9 +433,10 @@ export default async function MonitoringPage() {
   const hasBlogIssues =
     blogData.sourceReachable === false || blogData.publishedPosts === 0;
   const hasAffiliateIssues = affiliateData.empty;
+  const hasTrendIssues = !trendHealth.topCoinsAvailable;
 
   const overallHealthy =
-    !hasApiFailures && !hasCacheIssues && !hasBlogIssues && !hasAffiliateIssues;
+    !hasApiFailures && !hasCacheIssues && !hasBlogIssues && !hasAffiliateIssues && !hasTrendIssues;
 
   return (
     <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
@@ -444,6 +500,9 @@ export default async function MonitoringPage() {
               <li>No published blog posts found</li>
             )}
             {hasAffiliateIssues && <li>No affiliate click data recorded</li>}
+            {hasTrendIssues && (
+              <li>Trend/price data unavailable: {trendHealth.lastCheckError}</li>
+            )}
           </ul>
         </div>
       )}
@@ -702,7 +761,47 @@ export default async function MonitoringPage() {
           </div>
         </SectionCard>
 
-        {/* D. API Health */}
+        {/* D. Trend System Status */}
+        <SectionCard
+          title="Trend System Status"
+          icon={TrendingUp}
+          warning={hasTrendIssues}
+        >
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Price Data</p>
+                <StatusBadge
+                  ok={trendHealth.priceDataFresh}
+                  label={trendHealth.priceDataFresh ? "Fresh" : "Stale"}
+                />
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Tracked Coins</p>
+                <p className="text-xl font-bold">{trendHealth.coinCount}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Top Coins Cache
+              </p>
+              <StatusBadge
+                ok={trendHealth.topCoinsAvailable}
+                label={trendHealth.topCoinsAvailable ? "Populated" : "Empty"}
+              />
+            </div>
+
+            {trendHealth.lastCheckError && (
+              <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {trendHealth.lastCheckError}
+              </p>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* E. API Health */}
         <SectionCard
           title="API Health"
           icon={Globe}
