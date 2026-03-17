@@ -11,6 +11,7 @@ import {
   Users,
   Settings,
   Send,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const adminNav = [
   { title: "Affiliate", href: "/admin/affiliate", icon: BarChart3 },
   { title: "SEO", href: "/admin/seo", icon: Search },
   { title: "Users", href: "/admin/users", icon: Users },
+  { title: "Monitoring", href: "/admin/monitoring", icon: Activity },
   { title: "Indexing", href: "/admin/indexing", icon: Send },
   { title: "Settings", href: "/admin/settings", icon: Settings },
 ];
