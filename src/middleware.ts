@@ -1,35 +1,53 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export default withAuth(
-  function middleware() {
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 
-        // Protect admin routes and admin API routes - require admin role
-        if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-          return !!token && (token as { role?: string }).role === "admin";
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // --- Protect /admin pages with Basic Auth ---
+  if (pathname.startsWith("/admin")) {
+    if (!ADMIN_PASSWORD) {
+      // No password configured — allow access (development mode)
+      return NextResponse.next();
+    }
+
+    const authHeader = request.headers.get("authorization");
+
+    if (authHeader) {
+      const [scheme, encoded] = authHeader.split(" ");
+      if (scheme === "Basic" && encoded) {
+        const decoded = atob(encoded);
+        const [, password] = decoded.split(":");
+        if (password === ADMIN_PASSWORD) {
+          return NextResponse.next();
         }
+      }
+    }
 
-        // Protect dashboard routes - require authentication
-        if (pathname.startsWith("/dashboard")) {
-          return !!token;
-        }
-
-        // Allow all other routes
-        return true;
-      },
-    },
-    pages: {
-      signIn: "/auth/login",
-    },
+    return new NextResponse("Unauthorized", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
+    });
   }
-);
+
+  // --- Protect /api/admin routes with X-Admin-Password header ---
+  if (pathname.startsWith("/api/admin")) {
+    if (!ADMIN_PASSWORD) {
+      return NextResponse.next();
+    }
+
+    const headerPassword = request.headers.get("x-admin-password");
+    if (headerPassword === ADMIN_PASSWORD) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

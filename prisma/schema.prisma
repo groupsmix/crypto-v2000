@@ -78,7 +78,6 @@ model AffiliateClick {
   destinationUrl   String   @default("") @map("destination_url")
   campaignTag      String?  @map("campaign_tag")
   clickedAt        DateTime @default(now()) @map("clicked_at")
-  userId           String?  @map("user_id")
   ipHash           String   @map("ip_hash")
   userAgent        String?  @map("user_agent")
   referrer         String?  @map("referrer")
@@ -90,7 +89,6 @@ model AffiliateClick {
   networkName      String?  @map("network_name")
 
   exchange         Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
-  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([exchangeSlug])
   @@index([sourceType])
@@ -111,72 +109,12 @@ model BlogPost {
   category         String?
   tags             String[]  @default([])
   publishedAt      DateTime? @map("published_at")
+  scheduledFor     DateTime? @map("scheduled_for")
   createdAt        DateTime  @default(now()) @map("created_at")
 
   @@map("blog_posts")
 }
 
-// ─── User ───────────────────────────────────────────────────────────────────────
-
-model User {
-  id               String             @id @default(cuid())
-  name             String?
-  email            String             @unique
-  emailVerified    DateTime?          @map("email_verified")
-  passwordHash     String             @map("password_hash")
-  role             String             @default("user") // "user" | "admin"
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
-
-  savedComparisons SavedComparison[]
-  priceAlerts      PriceAlert[]
-  affiliateClicks  AffiliateClick[]
-  watchlists       Watchlist[]
-
-  @@map("users")
-}
-
-// ─── Watchlist ──────────────────────────────────────────────────────────────────
-
-model Watchlist {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  coinSymbol   String   @map("coin_symbol")
-  coinName     String   @map("coin_name")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, coinSymbol])
-  @@map("watchlists")
-}
-
-// ─── SavedComparison ────────────────────────────────────────────────────────────
-
-model SavedComparison {
-  id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  exchangeIds   String[] @map("exchange_ids")
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("saved_comparisons")
-}
-
-// ─── PriceAlert ─────────────────────────────────────────────────────────────────
-
-model PriceAlert {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  coinSymbol   String   @map("coin_symbol")
-  targetPrice  Float    @map("target_price")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("price_alerts")
-}
 
 // ─── ChatConversation ──────────────────────────────────────────────────────────
 
@@ -207,58 +145,4 @@ model ChatMessage {
   conversation     ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
-}
-
-// ─── IndexingQueueItem ────────────────────────────────────────────────────────
-
-model IndexingQueueItem {
-  id              String    @id @default(cuid())
-  url             String
-  canonicalUrl    String    @unique @map("canonical_url")
-  pageType        String    @map("page_type") // "blog" | "vs" | "prices"
-  status          String    @default("pending") // "pending" | "submitted" | "failed"
-  attempts        Int       @default(0)
-  lastAttemptAt   DateTime? @map("last_attempt_at")
-  submittedAt     DateTime? @map("submitted_at")
-  errorMessage    String?   @map("error_message")
-  createdAt       DateTime  @default(now()) @map("created_at")
-
-  @@index([status])
-  @@index([createdAt])
-  @@map("indexing_queue_items")
-}
-
-// ─── AutomationRun ─────────────────────────────────────────────────────────────
-
-model AutomationRun {
-  id               String           @id @default(cuid())
-  jobType          String           @map("job_type")
-  status           String           @default("pending") // pending | running | completed | failed
-  topicsFetched    Int              @default(0) @map("topics_fetched")
-  articlesCreated  Int              @default(0) @map("articles_created")
-  imagesGenerated  Int              @default(0) @map("images_generated")
-  errorCount       Int              @default(0) @map("error_count")
-  startedAt        DateTime?        @map("started_at")
-  completedAt      DateTime?        @map("completed_at")
-  resultSummary    String?          @map("result_summary")
-  createdAt        DateTime         @default(now()) @map("created_at")
-
-  logs             AutomationLog[]
-
-  @@map("automation_runs")
-}
-
-// ─── AutomationLog ─────────────────────────────────────────────────────────────
-
-model AutomationLog {
-  id              String        @id @default(cuid())
-  runId           String        @map("run_id")
-  level           String        @default("info") // info | warn | error
-  message         String
-  metadata        String?       // JSON string for extra context
-  createdAt       DateTime      @default(now()) @map("created_at")
-
-  run             AutomationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-
-  @@map("automation_logs")
 }

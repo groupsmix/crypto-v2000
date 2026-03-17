@@ -4,7 +4,6 @@ import {
   Database,
   FileText,
   BarChart3,
-  Users,
   MousePointerClick,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -23,14 +22,12 @@ async function getDashboardStats() {
       totalBlogPosts,
       publishedBlogPosts,
       totalClicks,
-      totalUsers,
       recentClicks,
     ] = await Promise.all([
       prisma.exchange.count(),
       prisma.blogPost.count(),
       prisma.blogPost.count({ where: { publishedAt: { not: null } } }),
       prisma.affiliateClick.count(),
-      prisma.user.count(),
       prisma.affiliateClick.findMany({
         take: 5,
         orderBy: { clickedAt: "desc" },
@@ -43,7 +40,6 @@ async function getDashboardStats() {
       totalBlogPosts,
       publishedBlogPosts,
       totalClicks,
-      totalUsers,
       recentClicks,
     };
   } catch {
@@ -52,7 +48,6 @@ async function getDashboardStats() {
       totalBlogPosts: 0,
       publishedBlogPosts: 0,
       totalClicks: 0,
-      totalUsers: 0,
       recentClicks: [] as { id: string; exchange: { name: string }; sourcePage: string; clickedAt: Date }[],
     };
   }
@@ -102,7 +97,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           icon={Database}
           label="Total Exchanges"
@@ -122,13 +117,6 @@ export default async function AdminDashboardPage() {
           value={stats.totalClicks.toLocaleString()}
           href="/admin/affiliate"
           color="text-green-500"
-        />
-        <StatCard
-          icon={Users}
-          label="Total Users"
-          value={stats.totalUsers}
-          href="/admin/users"
-          color="text-purple-500"
         />
       </div>
 

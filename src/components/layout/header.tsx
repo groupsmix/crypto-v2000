@@ -7,7 +7,6 @@ import { siteConfig } from "@/config/site";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { AuthButtons, MobileAuthButtons } from "@/components/auth/user-menu";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -43,7 +42,6 @@ export function Header() {
             <Search className="h-4 w-4" />
           </Button>
           <ThemeToggle />
-          <AuthButtons />
         </div>
 
         {/* Mobile Actions */}
@@ -87,7 +85,6 @@ export function Header() {
               </Link>
             ))}
           </nav>
-          <MobileAuthButtons />
         </Container>
       </div>
     </header>
