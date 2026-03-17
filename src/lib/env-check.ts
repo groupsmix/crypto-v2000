@@ -8,14 +8,6 @@ export function validateEnv(): { valid: boolean; missing: string[] } {
       key: "DATABASE_URL",
       hint: "PostgreSQL connection string (e.g. postgresql://user:pass@host:5432/db)",
     },
-    {
-      key: "NEXTAUTH_SECRET",
-      hint: "Generate with: openssl rand -base64 32",
-    },
-    {
-      key: "NEXTAUTH_URL",
-      hint: "Full URL of the app (e.g. https://cryptocompare.ai)",
-    },
   ];
 
   const warnings: { key: string; hint: string }[] = [

@@ -6,6 +6,20 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    // Validate slug uniqueness before attempting to create
+    if (body.slug) {
+      const existing = await prisma.blogPost.findUnique({
+        where: { slug: body.slug },
+        select: { id: true },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: `A blog post with slug "${body.slug}" already exists` },
+          { status: 409 }
+        );
+      }
+    }
+
     const post = await prisma.blogPost.create({
       data: {
         title: body.title,
