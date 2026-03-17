@@ -83,7 +83,7 @@ export type MarketChart = {
 
 // ─── Cache Helpers ────────────────────────────────────────────────────────────
 
-const CACHE_TTL_MARKETS = 120; // 2 minutes
+const CACHE_TTL_MARKETS = 600; // 10 minutes
 const CACHE_TTL_DETAIL = 300; // 5 minutes
 const CACHE_TTL_CHART = 600; // 10 minutes
 
