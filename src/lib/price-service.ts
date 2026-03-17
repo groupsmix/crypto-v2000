@@ -9,7 +9,7 @@
  * into the same types the rest of the app already uses.
  */
 
-import { redis } from "@/lib/redis";
+import { getCached, setCache } from "@/lib/cache";
 import type { CoinMarket, CoinDetail, MarketChart } from "@/lib/data/coingecko";
 import {
   getTop200 as cgGetTop200,
@@ -23,28 +23,6 @@ const CC_BASE = "https://min-api.cryptocompare.com/data";
 
 const CACHE_TTL_LIST = 600; // 10 minutes for coin list
 const CACHE_TTL_COIN = 300; // 5 minutes for coin data
-
-// ─── Cache Helpers ───────────────────────────────────────────────────────────
-
-async function getCached<T>(key: string): Promise<T | null> {
-  try {
-    const cached = await redis.get(key);
-    if (cached) {
-      return (typeof cached === "string" ? JSON.parse(cached) : cached) as T;
-    }
-  } catch {
-    // Redis unavailable
-  }
-  return null;
-}
-
-async function setCache(key: string, data: unknown, ttl: number): Promise<void> {
-  try {
-    await redis.set(key, JSON.stringify(data), { ex: ttl });
-  } catch {
-    // Redis unavailable
-  }
-}
 
 // ─── CryptoCompare Helpers ───────────────────────────────────────────────────
 

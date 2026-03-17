@@ -71,6 +71,10 @@ async function handleGetPosts(
     json(res, 405, { error: "Method not allowed" });
     return;
   }
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
 
   try {
     const posts = listPosts();
@@ -88,6 +92,10 @@ async function handleGetPostBySlug(
 ): Promise<void> {
   if (req.method !== "GET") {
     json(res, 405, { error: "Method not allowed" });
+    return;
+  }
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
     return;
   }
 
@@ -335,9 +343,14 @@ async function handleRunScheduled(
 }
 
 async function handleGetScheduled(
-  _req: IncomingMessage,
+  req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
+
   try {
     const posts = listPostsByStatus("scheduled");
     json(res, 200, { posts, count: posts.length });
@@ -348,9 +361,14 @@ async function handleGetScheduled(
 }
 
 async function handleGetPublished(
-  _req: IncomingMessage,
+  req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
+  if (!authenticate(req)) {
+    json(res, 401, { error: "Unauthorized" });
+    return;
+  }
+
   try {
     const posts = listPostsByStatus("published");
     json(res, 200, { posts, count: posts.length });
