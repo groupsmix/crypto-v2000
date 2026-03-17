@@ -1,4 +1,4 @@
-import { redis } from "@/lib/redis";
+import { getCached, setCache } from "@/lib/cache";
 
 const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
 
@@ -81,31 +81,11 @@ export type MarketChart = {
   total_volumes: [number, number][];
 };
 
-// ─── Cache Helpers ────────────────────────────────────────────────────────────
+// ─── Cache TTLs ──────────────────────────────────────────────────────────────
 
 const CACHE_TTL_MARKETS = 600; // 10 minutes
 const CACHE_TTL_DETAIL = 300; // 5 minutes
 const CACHE_TTL_CHART = 600; // 10 minutes
-
-async function getCached<T>(key: string): Promise<T | null> {
-  try {
-    const cached = await redis.get(key);
-    if (cached) {
-      return (typeof cached === "string" ? JSON.parse(cached) : cached) as T;
-    }
-  } catch {
-    // Redis unavailable, skip cache
-  }
-  return null;
-}
-
-async function setCache(key: string, data: unknown, ttl: number): Promise<void> {
-  try {
-    await redis.set(key, JSON.stringify(data), { ex: ttl });
-  } catch {
-    // Redis unavailable, skip cache
-  }
-}
 
 // ─── API Fetchers ─────────────────────────────────────────────────────────────
 
