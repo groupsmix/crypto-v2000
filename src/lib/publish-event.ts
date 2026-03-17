@@ -6,18 +6,17 @@
  * invalidation so sitemaps and index pages reflect the new content quickly.
  */
 
-import { enqueueUrl, type PageType } from "@/lib/indexing-queue";
 import { redis } from "@/lib/redis";
 import { revalidatePath } from "next/cache";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+export type PageType = "blog" | "vs" | "prices";
+
 export interface PublishEventResult {
   url: string;
   pageType: PageType;
-  queued: boolean;
   cacheInvalidated: boolean;
-  details?: string;
 }
 
 // ─── Cache Invalidation ─────────────────────────────────────────────────────
@@ -88,16 +87,13 @@ export async function onBlogPostPublished(
 ): Promise<PublishEventResult> {
   const path = `/blog/${slug}`;
 
-  const queueResult = await enqueueUrl(path, "blog");
   const cacheInvalidated = await invalidateRelatedCaches("blog", slug);
   revalidateRelatedPaths("blog", slug);
 
   return {
     url: path,
     pageType: "blog",
-    queued: queueResult.queued,
     cacheInvalidated,
-    details: queueResult.reason,
   };
 }
 
@@ -109,16 +105,13 @@ export async function onComparisonPagePublished(
 ): Promise<PublishEventResult> {
   const path = `/vs/${slug}`;
 
-  const queueResult = await enqueueUrl(path, "vs");
   const cacheInvalidated = await invalidateRelatedCaches("vs", slug);
   revalidateRelatedPaths("vs", slug);
 
   return {
     url: path,
     pageType: "vs",
-    queued: queueResult.queued,
     cacheInvalidated,
-    details: queueResult.reason,
   };
 }
 
@@ -130,16 +123,13 @@ export async function onCoinPagePublished(
 ): Promise<PublishEventResult> {
   const path = `/prices/${coinId}`;
 
-  const queueResult = await enqueueUrl(path, "prices");
   const cacheInvalidated = await invalidateRelatedCaches("prices", coinId);
   revalidateRelatedPaths("prices", coinId);
 
   return {
     url: path,
     pageType: "prices",
-    queued: queueResult.queued,
     cacheInvalidated,
-    details: queueResult.reason,
   };
 }
 

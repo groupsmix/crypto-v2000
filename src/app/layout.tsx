@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ThemeScript } from "@/components/ui/theme-script";
-import { SessionProvider } from "@/components/auth/session-provider";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -112,11 +111,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col antialiased`}
       >
-        <SessionProvider>
           <Header />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
-        </SessionProvider>
       </body>
     </html>
   );
