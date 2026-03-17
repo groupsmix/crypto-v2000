@@ -31,10 +31,15 @@ export async function PUT(
       await onBlogPostPublished(post.slug).catch(() => {});
     }
 
-    return NextResponse.json({ post });
+    return NextResponse.json({ post }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update post";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }
 
@@ -49,9 +54,14 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete post";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

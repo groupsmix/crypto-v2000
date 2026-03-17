@@ -1,4 +1,5 @@
 import { type ExchangeDetail } from "@/lib/data/exchanges";
+import { redis } from "@/lib/redis";
 
 export type VsVerdict = {
   summary: string;
@@ -13,38 +14,42 @@ export type VsVerdict = {
   generatedAt: string;
 };
 
-// In-memory cache for verdicts (keyed by sorted slug pair)
-const verdictCache = new Map<string, { verdict: VsVerdict; expiresAt: number }>();
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+const CACHE_PREFIX = "vs-verdict:";
 
 function getCacheKey(a: string, b: string): string {
-  return [a, b].sort().join("|");
+  return CACHE_PREFIX + [a, b].sort().join("|");
 }
 
 /**
  * Generate a deterministic verdict comparing two exchanges.
- * Uses cached data when available.
+ * Uses Redis-backed cache that persists across Cloudflare Workers isolates.
  *
  * In production, this would call an AI API (e.g. Anthropic Claude).
  * For now, it generates structured verdicts from exchange data.
  */
-export function generateVsVerdict(
+export async function generateVsVerdict(
   exchangeA: ExchangeDetail,
   exchangeB: ExchangeDetail
-): VsVerdict {
+): Promise<VsVerdict> {
   const cacheKey = getCacheKey(exchangeA.slug, exchangeB.slug);
 
-  const cached = verdictCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.verdict;
+  try {
+    const cached = await redis.get<VsVerdict>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  } catch {
+    // Redis unavailable — proceed without cache
   }
 
   const verdict = buildVerdict(exchangeA, exchangeB);
 
-  verdictCache.set(cacheKey, {
-    verdict,
-    expiresAt: Date.now() + CACHE_TTL_MS,
-  });
+  try {
+    await redis.set(cacheKey, verdict, { ex: CACHE_TTL_SECONDS });
+  } catch {
+    // Redis unavailable — verdict still returned, just not cached
+  }
 
   return verdict;
 }

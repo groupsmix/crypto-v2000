@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
   });
 
   if (posts.length === 0) {
-    return NextResponse.json({ published: 0 });
+    return NextResponse.json({ published: 0 }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   const published: string[] = [];
@@ -60,5 +62,7 @@ export async function GET(request: NextRequest) {
     published.push(post.slug);
   }
 
-  return NextResponse.json({ published: published.length, slugs: published });
+  return NextResponse.json({ published: published.length, slugs: published }, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

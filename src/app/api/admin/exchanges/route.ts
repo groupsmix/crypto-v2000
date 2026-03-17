@@ -35,9 +35,14 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ exchange });
+    return NextResponse.json({ exchange }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create exchange";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }
