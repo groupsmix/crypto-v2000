@@ -11,25 +11,35 @@ export const siteConfig = {
   },
   nav: [
     { title: "Home", href: "/" },
-    { title: "Compare", href: "/compare" },
-    { title: "Exchanges", href: "/exchanges" },
     { title: "Prices", href: "/prices" },
-    { title: "Offers", href: "/offers" },
+    { title: "Comparisons", href: "/compare" },
     { title: "Blog", href: "/blog" },
     { title: "Tools", href: "/tools" },
-    { title: "Learn", href: "/learn" },
   ],
   footerNav: {
+    quickLinks: [
+      { title: "Live Prices", href: "/prices" },
+      { title: "Compare Exchanges", href: "/compare" },
+      { title: "Blog", href: "/blog" },
+      { title: "Tools", href: "/tools" },
+    ],
+    comparisons: [
+      { title: "Binance vs Coinbase", href: "/vs/binance-vs-coinbase" },
+      { title: "Binance vs Bybit", href: "/vs/binance-vs-bybit" },
+      { title: "Kraken vs Coinbase", href: "/vs/kraken-vs-coinbase" },
+      { title: "Binance vs Kraken", href: "/vs/binance-vs-kraken" },
+    ],
+    exchanges: [
+      { title: "Binance", href: "/exchanges/binance" },
+      { title: "Coinbase", href: "/exchanges/coinbase" },
+      { title: "Kraken", href: "/exchanges/kraken" },
+      { title: "Bybit", href: "/exchanges/bybit" },
+      { title: "KuCoin", href: "/exchanges/kucoin" },
+    ],
     legal: [
       { title: "About", href: "/about" },
       { title: "Privacy", href: "/privacy" },
       { title: "Terms", href: "/terms" },
-    ],
-    quickLinks: [
-      { title: "Compare", href: "/compare" },
-      { title: "Blog", href: "/blog" },
-      { title: "Tools", href: "/tools" },
-      { title: "Learn", href: "/learn" },
     ],
   },
 } as const;

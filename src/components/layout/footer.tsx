@@ -46,18 +46,32 @@ export function Footer() {
   return (
     <footer className="border-t border-border/40 bg-background">
       <Container className="py-12 md:py-16">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Brand */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-6">
+          {/* Brand — spans 2 cols on mobile */}
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               <span className="text-lg font-bold tracking-tight">
                 {siteConfig.name}
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               {siteConfig.description}
             </p>
+            <div className="flex items-center gap-3 pt-1">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={social.label}
+                >
+                  <social.icon className="h-5 w-5" />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Quick Links */}
@@ -65,6 +79,38 @@ export function Footer() {
             <h3 className="text-sm font-semibold">Quick Links</h3>
             <nav className="flex flex-col gap-2">
               {siteConfig.footerNav.quickLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Comparisons */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold">Top Comparisons</h3>
+            <nav className="flex flex-col gap-2">
+              {siteConfig.footerNav.comparisons.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Exchanges */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold">Exchanges</h3>
+            <nav className="flex flex-col gap-2">
+              {siteConfig.footerNav.exchanges.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -91,36 +137,27 @@ export function Footer() {
               ))}
             </nav>
           </div>
+        </div>
 
-          {/* Social */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Follow Us</h3>
-            <div className="flex items-center gap-3">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={social.label}
-                >
-                  <social.icon className="h-5 w-5" />
-                </a>
-              ))}
-            </div>
-          </div>
+        {/* Affiliate disclaimer */}
+        <div className="mt-10 rounded-lg border border-border/40 bg-muted/30 px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+          <strong>Affiliate Disclosure:</strong> Some links on this site are
+          affiliate links. If you click through and make a purchase or sign up,
+          we may earn a commission at no extra cost to you. This helps us keep
+          the site running and provide free tools and content. We only recommend
+          exchanges we have reviewed and believe offer genuine value.
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-6 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
             reserved.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Affiliate disclosure: Some links may earn us a commission at no extra cost to you.
-          </p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </Container>
     </footer>

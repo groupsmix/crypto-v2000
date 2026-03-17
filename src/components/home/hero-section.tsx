@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  BarChart3,
+  ArrowLeftRight,
+  BookOpen,
+} from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 
@@ -12,15 +18,15 @@ export function HeroSection() {
           AI-Powered Exchange Comparisons
         </div>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-          Find the{" "}
+          Compare Crypto Exchanges{" "}
           <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
-            Best Crypto Exchange
+            &amp; Track Prices
           </span>{" "}
-          Instantly
+          in Real Time
         </h1>
         <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-          Compare fees, bonuses &amp; features across 50+ exchanges. Make
-          smarter trading decisions with AI-powered insights.
+          Compare fees, bonuses &amp; features across 50+ exchanges. Track live
+          prices and make smarter trading decisions.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
           <Button asChild size="lg" className="w-full sm:w-auto text-base">
@@ -38,7 +44,33 @@ export function HeroSection() {
             <Link href="/prices">See Live Prices</Link>
           </Button>
         </div>
-        <div className="flex items-center justify-center gap-6 pt-4 text-sm text-muted-foreground">
+
+        {/* Quick links */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+          <Link
+            href="/prices"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            Live Prices
+          </Link>
+          <Link
+            href="/vs/binance-vs-coinbase"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40"
+          >
+            <ArrowLeftRight className="h-3.5 w-3.5" />
+            Binance vs Coinbase
+          </Link>
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Guides &amp; Reviews
+          </Link>
+        </div>
+
+        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
             Live data
