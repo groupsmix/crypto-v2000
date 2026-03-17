@@ -361,7 +361,7 @@ export function ComparisonTable({
                   <td className="px-4 py-4 text-right">
                     <Button asChild size="sm">
                       <a
-                        href={buildClickUrl(exchange.id, "compare")}
+                        href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "compare", sourcePath: "/compare" })}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -481,7 +481,7 @@ export function ComparisonTable({
               <div className="pl-8">
                 <Button asChild size="sm" className="w-full">
                   <a
-                    href={buildClickUrl(exchange.id, "compare")}
+                    href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "compare", sourcePath: "/compare" })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
