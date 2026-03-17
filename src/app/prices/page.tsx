@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Section } from "@/components/ui/section";
-import { getTop200 } from "@/lib/data/coingecko";
+import { getTopCoins } from "@/lib/price-service";
 import { PricesTable } from "@/components/prices/prices-table";
 import { Coins } from "lucide-react";
 
@@ -11,10 +11,10 @@ export const metadata: Metadata = {
     "Live cryptocurrency prices for the top 200 coins. Track Bitcoin, Ethereum, and altcoin prices with 24h changes, market cap, volume, and 7-day sparkline charts.",
 };
 
-export const revalidate = 120; // ISR: revalidate every 2 minutes
+export const revalidate = 600; // ISR: revalidate every 10 minutes
 
 export default async function PricesPage() {
-  const coins = await getTop200();
+  const coins = await getTopCoins();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -65,8 +65,8 @@ export default async function PricesPage() {
           <PricesTable coins={coins} />
 
           <p className="text-center text-xs text-muted-foreground">
-            Prices updated every 2 minutes via CoinGecko API. Data cached in
-            Redis for performance.
+            Prices updated every 10 minutes. Data provided by CoinGecko with
+            CryptoCompare fallback.
           </p>
         </div>
       </Section>

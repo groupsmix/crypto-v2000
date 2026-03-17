@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { getCoinDetail, getMarketChart } from "@/lib/data/coingecko";
+import { getCoinData, getCoinChart } from "@/lib/price-service";
 import { PriceChart } from "@/components/prices/price-chart";
+import { getRelatedPosts } from "@/lib/data/blog-posts";
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes
 
@@ -24,9 +25,11 @@ type PageProps = {
   params: Promise<{ coin: string }>;
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cryptocompare.ai";
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { coin: coinId } = await params;
-  const coin = await getCoinDetail(coinId);
+  const coin = await getCoinData(coinId);
 
   if (!coin) {
     return { title: "Coin Not Found" };
@@ -38,9 +41,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? `$${price.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
       : `$${price.toFixed(6)}`;
 
+  const title = `${coin.name} (${coin.symbol.toUpperCase()}) Price — ${priceFormatted}`;
+  const description = `${coin.name} live price is ${priceFormatted}. View ${coin.symbol.toUpperCase()} market cap, volume, 24h change, price chart, and exchange availability.`;
+  const canonicalPath = `/prices/${coinId}`;
+
   return {
-    title: `${coin.name} (${coin.symbol.toUpperCase()}) Price — ${priceFormatted}`,
-    description: `${coin.name} live price is ${priceFormatted}. View ${coin.symbol.toUpperCase()} market cap, volume, 24h change, price chart, and exchange availability on CryptoCompare AI.`,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `${siteUrl}${canonicalPath}`,
+      ...(coin.image.large ? { images: [coin.image.large] } : {}),
+    },
   };
 }
 
@@ -142,8 +159,8 @@ const KNOWN_EXCHANGES: Record<string, { slug: string; name: string }> = {
 export default async function CoinDetailPage({ params }: PageProps) {
   const { coin: coinId } = await params;
   const [coin, chartData] = await Promise.all([
-    getCoinDetail(coinId),
-    getMarketChart(coinId, 90),
+    getCoinData(coinId),
+    getCoinChart(coinId, 90),
   ]);
 
   if (!coin) {
@@ -154,11 +171,13 @@ export default async function CoinDetailPage({ params }: PageProps) {
   const price = md.current_price.usd;
   const change24h = md.price_change_percentage_24h;
 
-  // Schema markup
+  // Schema markup — cryptocurrency price JSON-LD
+  const canonicalUrl = `${siteUrl}/prices/${coinId}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: `${coin.name} Price`,
+    name: `${coin.name} (${coin.symbol.toUpperCase()}) Price`,
+    url: canonicalUrl,
     description: `Live ${coin.name} (${coin.symbol.toUpperCase()}) price, market data, and exchange availability.`,
     mainEntity: {
       "@type": "ExchangeRateSpecification",
@@ -169,7 +188,23 @@ export default async function CoinDetailPage({ params }: PageProps) {
         priceCurrency: "USD",
       },
     },
+    about: {
+      "@type": "FinancialProduct",
+      name: coin.name,
+      alternateName: coin.symbol.toUpperCase(),
+      ...(coin.description.en
+        ? { description: coin.description.en.replace(/<[^>]*>/g, "").substring(0, 200) }
+        : {}),
+    },
   };
+
+  // Fetch related blog posts
+  const relatedPosts = await getRelatedPosts(
+    "", // no current slug to exclude
+    null,
+    [coin.name.toLowerCase(), coin.symbol.toLowerCase()],
+    3
+  );
 
   // Get unique exchanges from tickers
   const exchangeMap = new Map<string, { name: string; volume: number; trustScore: string | null; tradeUrl: string | null; slug: string | null }>();
@@ -444,8 +479,43 @@ export default async function CoinDetailPage({ params }: PageProps) {
             </div>
           )}
 
+          {/* Related Blog Posts */}
+          {relatedPosts.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">
+                Related Articles
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedPosts.map((post) => (
+                  <Link
+                    key={post.slug}
+                    href={`/blog/${post.slug}`}
+                    className="rounded-xl border border-border/60 bg-card p-4 space-y-2 hover:bg-muted/20 transition-colors"
+                  >
+                    <h3 className="text-sm font-semibold line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {post.metaDescription || post.content.slice(0, 120)}
+                    </p>
+                    {post.publishedAt && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <p className="text-center text-xs text-muted-foreground">
-            Data provided by CoinGecko. Prices update every 5 minutes.
+            Data provided by CoinGecko with CryptoCompare fallback. Prices
+            update every 5 minutes.
           </p>
         </div>
       </Section>
