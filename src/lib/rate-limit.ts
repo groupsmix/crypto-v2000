@@ -1,28 +1,12 @@
 /**
- * Simple in-memory rate limiter for API routes.
+ * Redis-backed rate limiter using @upstash/ratelimit.
  *
- * For production at scale, replace with Redis-based rate limiting
- * (e.g. @upstash/ratelimit) for multi-instance support.
+ * Works correctly across Cloudflare Workers isolates and
+ * multi-instance deployments (unlike the previous in-memory Map).
  */
 
-type RateLimitEntry = {
-  count: number;
-  resetAt: number;
-};
-
-const store = new Map<string, RateLimitEntry>();
-
-// Clean up expired entries every 60 seconds
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    store.forEach((entry, key) => {
-      if (entry.resetAt < now) {
-        store.delete(key);
-      }
-    });
-  }, 60_000);
-}
+import { Ratelimit } from "@upstash/ratelimit";
+import { redis } from "@/lib/redis";
 
 export type RateLimitConfig = {
   /** Maximum number of requests in the window */
@@ -40,42 +24,41 @@ export type RateLimitResult = {
 /**
  * Check if a request from the given identifier is allowed.
  *
+ * Uses a sliding-window algorithm backed by Upstash Redis.
+ * Falls back to allowing the request if Redis is unavailable
+ * so that a Redis outage does not block all traffic.
+ *
  * @param identifier - Unique key for the client (e.g. IP hash, user ID)
  * @param config - Rate limit configuration
  * @returns Whether the request is allowed and remaining quota
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   identifier: string,
   config: RateLimitConfig
-): RateLimitResult {
-  const now = Date.now();
-  const windowMs = config.windowSeconds * 1000;
+): Promise<RateLimitResult> {
+  try {
+    const ratelimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.limit, `${config.windowSeconds} s`),
+      analytics: false,
+      prefix: "ratelimit",
+    });
 
-  const existing = store.get(identifier);
+    const result = await ratelimit.limit(identifier);
 
-  if (!existing || existing.resetAt < now) {
-    // Start new window
-    const entry: RateLimitEntry = {
-      count: 1,
-      resetAt: now + windowMs,
+    return {
+      allowed: result.success,
+      remaining: result.remaining,
+      resetAt: result.reset,
     };
-    store.set(identifier, entry);
+  } catch {
+    // If Redis is down, allow the request (fail-open)
     return {
       allowed: true,
-      remaining: config.limit - 1,
-      resetAt: entry.resetAt,
+      remaining: config.limit,
+      resetAt: Date.now() + config.windowSeconds * 1000,
     };
   }
-
-  // Within existing window
-  existing.count++;
-  const allowed = existing.count <= config.limit;
-
-  return {
-    allowed,
-    remaining: Math.max(0, config.limit - existing.count),
-    resetAt: existing.resetAt,
-  };
 }
 
 /**

@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Derive ip_hash from request headers
-  const ipHash = hashString(
+  // Derive ip_hash from request headers (SHA-256 with server-side salt)
+  const ipHash = await hashString(
     request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown"
@@ -92,13 +92,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Simple hash function for IP anonymization
-function hashString(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
+/**
+ * Hash a string (e.g. an IP address) using SHA-256 with a server-side salt.
+ * This produces a one-way hash that cannot be reversed via a simple lookup
+ * table, unlike the previous djb2 hash which had only ~4 billion outputs.
+ */
+async function hashString(str: string): Promise<string> {
+  const salt = process.env.IP_HASH_SALT || "crypto-v2000-default-salt";
+  const data = new TextEncoder().encode(salt + str);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
