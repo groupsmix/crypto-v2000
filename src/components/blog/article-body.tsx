@@ -58,7 +58,7 @@ function AffiliateCta({ index }: { index: number }) {
         </div>
         <Button asChild size="sm" className="w-full sm:w-auto shrink-0">
           <a
-            href={buildClickUrl(exchange.id, "blog-cta")}
+            href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "blog-post", sourcePath: "/blog" })}
             target="_blank"
             rel="noopener noreferrer"
           >

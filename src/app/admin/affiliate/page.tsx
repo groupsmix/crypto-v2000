@@ -1,16 +1,26 @@
 import type { Metadata } from "next";
-import { BarChart3, MousePointerClick, Globe, Clock } from "lucide-react";
+import {
+  BarChart3,
+  MousePointerClick,
+  Globe,
+  Clock,
+  DollarSign,
+  FileText,
+  MapPin,
+} from "lucide-react";
 import {
   getAffiliateAnalytics,
   type ClicksByExchange,
   type ClicksBySource,
+  type ClicksBySourcePath,
 } from "@/lib/data/affiliate-analytics";
-
 
 export const metadata: Metadata = {
   title: "Affiliate Analytics",
   description: "View affiliate click tracking analytics.",
 };
+
+export const dynamic = "force-dynamic";
 
 // ─── Bar Chart (CSS-based) ──────────────────────────────────────────────────────
 
@@ -28,7 +38,8 @@ function HorizontalBarChart({
   if (data.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-4 text-center">
-        No data yet. Clicks will appear here once users start clicking CTA buttons.
+        No data yet. Clicks will appear here once users start clicking CTA
+        buttons.
       </p>
     );
   }
@@ -90,13 +101,17 @@ function StatCard({
 
 // ─── Source Label Helper ────────────────────────────────────────────────────────
 
-function formatSourcePage(source: string): string {
+function formatSourceType(source: string): string {
   const labels: Record<string, string> = {
     homepage: "Homepage Table",
     "homepage-featured": "Featured Cards",
     compare: "Compare Page",
     "exchange-detail": "Exchange Detail",
     "exchange-detail-offer": "Exchange Detail (Offer)",
+    "vs-page": "VS Comparison",
+    "blog-post": "Blog Post",
+    "prices-page": "Prices Page",
+    "tools-page": "Tools Page",
     unknown: "Unknown",
   };
   return labels[source] || source;
@@ -116,7 +131,14 @@ export default async function AffiliateAnalyticsPage() {
 
   const sourceChartData = analytics.clicksBySource.map(
     (r: ClicksBySource) => ({
-      label: formatSourcePage(r.sourcePage),
+      label: formatSourceType(r.sourceType),
+      value: r.totalClicks,
+    })
+  );
+
+  const sourcePathChartData = analytics.clicksBySourcePath.map(
+    (r: ClicksBySourcePath) => ({
+      label: r.sourcePath || "(no path)",
       value: r.totalClicks,
     })
   );
@@ -128,7 +150,7 @@ export default async function AffiliateAnalyticsPage() {
 
   const topSource =
     analytics.clicksBySource.length > 0
-      ? formatSourcePage(analytics.clicksBySource[0].sourcePage)
+      ? formatSourceType(analytics.clicksBySource[0].sourceType)
       : "—";
 
   return (
@@ -149,7 +171,7 @@ export default async function AffiliateAnalyticsPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon={MousePointerClick}
           label="Total Clicks"
@@ -170,7 +192,32 @@ export default async function AffiliateAnalyticsPage() {
           label="Top Exchange"
           value={topExchange}
         />
+        <StatCard
+          icon={DollarSign}
+          label="Est. Revenue"
+          value={
+            analytics.revenue.totalEstimatedRevenue > 0
+              ? `$${analytics.revenue.totalEstimatedRevenue.toLocaleString()}`
+              : "—"
+          }
+        />
       </div>
+
+      {/* Revenue Placeholder Banner */}
+      {analytics.revenue.totalConversions === 0 &&
+        analytics.revenue.totalEstimatedRevenue === 0 && (
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-5 text-center space-y-2">
+            <DollarSign className="h-6 w-6 text-muted-foreground mx-auto" />
+            <p className="text-sm font-medium text-muted-foreground">
+              Revenue tracking is ready
+            </p>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Conversion counts and estimated revenue fields are prepared. Once
+              affiliate network API integrations are connected, data will appear
+              here automatically.
+            </p>
+          </div>
+        )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -188,11 +235,11 @@ export default async function AffiliateAnalyticsPage() {
           />
         </div>
 
-        {/* Clicks by Source Page */}
+        {/* Clicks by Source Type */}
         <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Globe className="h-4 w-4 text-muted-foreground" />
-            Clicks by Source Page
+            Clicks by Source Type
           </h2>
           <HorizontalBarChart
             data={sourceChartData}
@@ -201,6 +248,20 @@ export default async function AffiliateAnalyticsPage() {
             color="bg-blue-500"
           />
         </div>
+      </div>
+
+      {/* Top-Performing Source Pages */}
+      <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          Top-Performing Source Pages
+        </h2>
+        <HorizontalBarChart
+          data={sourcePathChartData}
+          labelKey="Page Path"
+          valueKey="Clicks"
+          color="bg-green-500"
+        />
       </div>
 
       {/* Recent Click Activity */}
@@ -212,7 +273,8 @@ export default async function AffiliateAnalyticsPage() {
 
         {analytics.recentClicks.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">
-            No clicks recorded yet. Affiliate click activity will appear here in real-time.
+            No clicks recorded yet. Affiliate click activity will appear here in
+            real-time.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -223,7 +285,13 @@ export default async function AffiliateAnalyticsPage() {
                     Exchange
                   </th>
                   <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Source Page
+                    Source Type
+                  </th>
+                  <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Source Path
+                  </th>
+                  <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Country
                   </th>
                   <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Time
@@ -241,9 +309,18 @@ export default async function AffiliateAnalyticsPage() {
                   >
                     <td className="py-3 font-medium">{click.exchangeName}</td>
                     <td className="py-3 text-muted-foreground">
-                      {formatSourcePage(click.sourcePage)}
+                      {formatSourceType(click.sourceType)}
+                    </td>
+                    <td className="py-3 text-muted-foreground text-xs font-mono">
+                      {click.sourcePath || "—"}
                     </td>
                     <td className="py-3 text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {click.country || "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 text-muted-foreground whitespace-nowrap">
                       {new Date(click.clickedAt).toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
