@@ -2,11 +2,14 @@ import { type ExchangeDetail } from "@/lib/data/exchanges";
 
 export type VsVerdict = {
   summary: string;
+  overallWinner: string;
   forBeginners: { winner: string; reason: string };
   forAdvanced: { winner: string; reason: string };
   forFees: { winner: string; reason: string };
+  forPrivacy: { winner: string; reason: string };
   forCoinVariety: { winner: string; reason: string };
   forUx: { winner: string; reason: string };
+  faqs: { question: string; answer: string }[];
   generatedAt: string;
 };
 
@@ -81,6 +84,15 @@ function buildVerdict(a: ExchangeDetail, b: ExchangeDetail): VsVerdict {
   const uxWinner = a.score >= b.score ? a : b;
   const uxLoser = uxWinner === a ? b : a;
 
+  // Privacy winner (no KYC wins)
+  const privacyWinner =
+    a.kycRequired === b.kycRequired
+      ? null
+      : a.kycRequired
+        ? b
+        : a;
+  const privacyLoser = privacyWinner === a ? b : privacyWinner === b ? a : null;
+
   // Build fee description
   const feeWinnerFeeStr = feeWinner.fees
     ? `${feeWinner.fees.spotMakerFee}%/${feeWinner.fees.spotTakerFee}%`
@@ -95,8 +107,47 @@ function buildVerdict(a: ExchangeDetail, b: ExchangeDetail): VsVerdict {
 
   const summary = `In the ${a.name} vs ${b.name} comparison, ${overallWinner.name} takes a slight edge with an overall score of ${overallWinner.score.toFixed(1)}/10 compared to ${overallLoser.name}'s ${overallLoser.score.toFixed(1)}/10. However, the best choice depends on your trading needs. ${feeWinner.name} offers lower trading fees (${feeWinnerFeeStr} spot maker/taker), while ${coinWinner.name} supports more cryptocurrencies (${coinWinner.supportedCoinsCount}+ coins). ${a.futuresAvailable && b.futuresAvailable ? "Both exchanges support futures trading." : a.futuresAvailable ? `${a.name} offers futures trading, while ${b.name} focuses on spot trading.` : b.futuresAvailable ? `${b.name} offers futures trading, while ${a.name} focuses on spot trading.` : "Neither exchange currently offers futures trading."}`;
 
+  // Build FAQ entries
+  const faqs = [
+    {
+      question: `Which is better, ${a.name} or ${b.name}?`,
+      answer: summary,
+    },
+    {
+      question: `Which has lower fees, ${a.name} or ${b.name}?`,
+      answer: `${feeWinner.name} wins on fees with spot rates of ${feeWinnerFeeStr} (maker/taker) compared to ${feeLoser.name}'s ${feeLoserFeeStr}.`,
+    },
+    {
+      question: `Which is better for beginners, ${a.name} or ${b.name}?`,
+      answer: `${beginnerWinner.name} is better suited for beginners with a score of ${beginnerWinner.score.toFixed(1)}/10 and a ${beginnerWinner.futuresAvailable ? "comprehensive" : "streamlined"} trading interface.`,
+    },
+    {
+      question: `Does ${a.name} or ${b.name} support more cryptocurrencies?`,
+      answer: `${coinWinner.name} supports ${coinWinner.supportedCoinsCount}+ cryptocurrencies compared to ${coinLoser.name}'s ${coinLoser.supportedCoinsCount}+.`,
+    },
+    {
+      question: `Does ${a.name} or ${b.name} offer futures trading?`,
+      answer: a.futuresAvailable && b.futuresAvailable
+        ? `Both ${a.name} and ${b.name} offer futures trading.`
+        : a.futuresAvailable
+          ? `${a.name} offers futures trading, while ${b.name} does not.`
+          : b.futuresAvailable
+            ? `${b.name} offers futures trading, while ${a.name} does not.`
+            : `Neither ${a.name} nor ${b.name} currently offers futures trading.`,
+    },
+    ...(privacyWinner
+      ? [
+          {
+            question: `Which exchange has less KYC requirements, ${a.name} or ${b.name}?`,
+            answer: `${privacyWinner.name} does not require KYC for basic features, making it the better choice for users who value privacy. ${privacyLoser?.name ?? "The other exchange"} requires KYC verification.`,
+          },
+        ]
+      : []),
+  ];
+
   return {
     summary,
+    overallWinner: overallWinner.name,
     forBeginners: {
       winner: beginnerWinner.name,
       reason: `${beginnerWinner.name} is better suited for beginners with a score of ${beginnerWinner.score.toFixed(1)}/10 and a ${beginnerWinner.futuresAvailable ? "comprehensive" : "streamlined"} trading interface. ${beginnerLoser.name} (${beginnerLoser.score.toFixed(1)}/10) is also a solid choice but may have a steeper learning curve${beginnerLoser.supportedCoinsCount > 300 ? " due to its extensive feature set" : ""}.`,
@@ -109,6 +160,15 @@ function buildVerdict(a: ExchangeDetail, b: ExchangeDetail): VsVerdict {
       winner: feeWinner.name,
       reason: `${feeWinner.name} wins on fees with spot rates of ${feeWinnerFeeStr} (maker/taker) compared to ${feeLoser.name}'s ${feeLoserFeeStr}. ${feeWinner.fees?.withdrawalFee != null ? `Withdrawal fees are ${feeWinner.fees.withdrawalFee > 0 ? `${feeWinner.fees.withdrawalFee} BTC` : "free"}.` : ""}`,
     },
+    forPrivacy: privacyWinner
+      ? {
+          winner: privacyWinner.name,
+          reason: `${privacyWinner.name} does not require KYC for basic features, making it the better choice for privacy-focused users. ${privacyLoser?.name ?? "The other exchange"} requires full KYC verification before trading.`,
+        }
+      : {
+          winner: "Tie",
+          reason: `Both ${a.name} and ${b.name} ${a.kycRequired ? "require" : "do not require"} KYC verification. Neither has a privacy advantage over the other.`,
+        },
     forCoinVariety: {
       winner: coinWinner.name,
       reason: `${coinWinner.name} supports ${coinWinner.supportedCoinsCount}+ cryptocurrencies compared to ${coinLoser.name}'s ${coinLoser.supportedCoinsCount}+. If you're looking for a wide selection of altcoins and trading pairs, ${coinWinner.name} is the clear choice.`,
@@ -117,6 +177,7 @@ function buildVerdict(a: ExchangeDetail, b: ExchangeDetail): VsVerdict {
       winner: uxWinner.name,
       reason: `${uxWinner.name} scores ${uxWinner.score.toFixed(1)}/10 for overall user experience, offering a polished interface${uxWinner.foundedYear ? ` refined since ${uxWinner.foundedYear}` : ""}. ${uxLoser.name} (${uxLoser.score.toFixed(1)}/10) also provides a good experience but ${uxWinner.score - uxLoser.score > 0.5 ? "trails noticeably" : "is very close"} in our assessment.`,
     },
+    faqs,
     generatedAt: now,
   };
 }
