@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Coins, ArrowLeftRight } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { BlogFilters } from "@/components/blog/blog-filters";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
@@ -16,11 +17,21 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Latest news, guides, and insights about crypto exchanges, trading fees, and the best platforms.",
+  alternates: {
+    canonical: "/blog",
+  },
   openGraph: {
     title: `Blog | ${siteConfig.name}`,
     description:
       "Expert guides, exchange reviews, and crypto trading insights to help you make smarter decisions.",
     type: "website",
+    url: `${siteConfig.url}/blog`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Blog | ${siteConfig.name}`,
+    description:
+      "Expert guides, exchange reviews, and crypto trading insights to help you make smarter decisions.",
   },
 };
 
@@ -105,6 +116,24 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             {hasFilters ? " (filtered)" : ""}
           </p>
         )}
+
+        {/* Internal Links */}
+        <div className="flex flex-wrap justify-center gap-3 pt-4">
+          <Link
+            href="/prices"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+          >
+            <Coins className="h-3.5 w-3.5" />
+            Live Prices
+          </Link>
+          <Link
+            href="/compare"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+          >
+            <ArrowLeftRight className="h-3.5 w-3.5" />
+            Compare Exchanges
+          </Link>
+        </div>
       </div>
     </Section>
   );

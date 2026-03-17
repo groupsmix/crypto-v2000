@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Section } from "@/components/ui/section";
+import { siteConfig } from "@/config/site";
 import {
   Calculator,
   DollarSign,
@@ -9,12 +10,33 @@ import {
   Wallet,
   Wrench,
   ArrowRight,
+  ArrowLeftRight,
+  BookOpen,
+  Coins,
 } from "lucide-react";
+
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cryptocompare.ai";
 
 export const metadata: Metadata = {
   title: "Crypto Tools — Calculators, Converters & Portfolio Tracker",
   description:
     "Free crypto trading tools: fee calculator, profit/loss calculator, DCA calculator, currency converter, and portfolio tracker. All with live market data.",
+  alternates: {
+    canonical: "/tools",
+  },
+  openGraph: {
+    title: `Crypto Tools | ${siteConfig.name}`,
+    description:
+      "Free crypto trading tools: fee calculator, profit/loss calculator, DCA calculator, currency converter, and portfolio tracker.",
+    type: "website",
+    url: `${siteUrl}/tools`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Crypto Tools | ${siteConfig.name}`,
+    description:
+      "Free crypto trading tools: fee calculator, profit/loss calculator, DCA calculator, currency converter, and portfolio tracker.",
+  },
 };
 
 const tools = [
@@ -98,6 +120,31 @@ export default function ToolsPage() {
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* Internal Links */}
+        <div className="flex flex-wrap justify-center gap-3 pt-4">
+          <Link
+            href="/prices"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+          >
+            <Coins className="h-3.5 w-3.5" />
+            Live Prices
+          </Link>
+          <Link
+            href="/compare"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+          >
+            <ArrowLeftRight className="h-3.5 w-3.5" />
+            Compare Exchanges
+          </Link>
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Crypto Blog
+          </Link>
         </div>
       </div>
     </Section>

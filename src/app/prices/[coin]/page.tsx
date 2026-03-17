@@ -12,12 +12,16 @@ import {
   Hash,
   DollarSign,
   Activity,
+  ArrowLeftRight,
+  BookOpen,
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { getCoinData, getCoinChart } from "@/lib/price-service";
 import { PriceChart } from "@/components/prices/price-chart";
 import { getRelatedPosts } from "@/lib/data/blog-posts";
+import { buildClickUrl } from "@/lib/affiliate";
+import { siteConfig } from "@/config/site";
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes
 
@@ -56,6 +60,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: "website",
       url: `${siteUrl}${canonicalPath}`,
+      ...(coin.image.large ? { images: [coin.image.large] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
       ...(coin.image.large ? { images: [coin.image.large] } : {}),
     },
   };
@@ -171,6 +181,32 @@ export default async function CoinDetailPage({ params }: PageProps) {
   const price = md.current_price.usd;
   const change24h = md.price_change_percentage_24h;
 
+  // BreadcrumbList JSON-LD
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteConfig.url,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Crypto Prices",
+        item: `${siteConfig.url}/prices`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `${coin.name} (${coin.symbol.toUpperCase()})`,
+        item: `${siteConfig.url}/prices/${coinId}`,
+      },
+    ],
+  };
+
   // Schema markup — cryptocurrency price JSON-LD
   const canonicalUrl = `${siteUrl}/prices/${coinId}`;
   const jsonLd = {
@@ -238,6 +274,10 @@ export default async function CoinDetailPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <Section>
         <div className="space-y-8 max-w-6xl mx-auto">
@@ -399,11 +439,15 @@ export default async function CoinDetailPage({ params }: PageProps) {
                           </td>
                           <td className="py-3 px-4 text-right">
                             {ex.slug ? (
-                              <Link href={`/exchanges/${ex.slug}`}>
+                              <a
+                                href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "prices-page", sourcePath: `/prices/${coinId}` })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 <Button size="sm" variant="default" className="h-7 text-xs">
                                   Visit Exchange
                                 </Button>
-                              </Link>
+                              </a>
                             ) : ex.tradeUrl ? (
                               <a
                                 href={ex.tradeUrl}
@@ -512,6 +556,24 @@ export default async function CoinDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* Internal Links */}
+          <div className="flex flex-wrap justify-center gap-3 pt-4">
+            <Link
+              href="/compare"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+              Compare Exchanges
+            </Link>
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border/60 rounded-full px-4 py-1.5"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Crypto Blog
+            </Link>
+          </div>
 
           <p className="text-center text-xs text-muted-foreground">
             Data provided by CoinGecko with CryptoCompare fallback. Prices
