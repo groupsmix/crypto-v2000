@@ -186,7 +186,7 @@ export async function getCoinData(coinId: string): Promise<CoinDetail | null> {
   try {
     const symbol = coinId.toUpperCase();
     const data = await ccFetch<{
-      RAW?: Record<string, { USD?: CCTopCoinRaw["RAW"]["USD"] }>;
+      RAW?: Record<string, { USD?: NonNullable<NonNullable<CCTopCoinRaw["RAW"]>["USD"]> }>;
       DISPLAY?: Record<string, { USD?: Record<string, string> }>;
     }>(`/pricemultifull?fsyms=${symbol}&tsyms=USD`);
 
