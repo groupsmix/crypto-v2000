@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const slug = searchParams.get("slug");
   const sourceType = searchParams.get("source_type") || "unknown";
   const sourcePath = searchParams.get("source_path") || "";
+  const pageType = searchParams.get("page_type") || null;
   const campaignTag = searchParams.get("campaign") || null;
 
   if (!slug) {
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
           sourcePage: sourceType, // backward compat with old field
           sourceType,
           sourcePath,
+          pageType,
           destinationUrl: affiliateUrl,
           campaignTag,
           ipHash,

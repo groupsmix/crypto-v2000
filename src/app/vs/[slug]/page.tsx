@@ -373,11 +373,11 @@ export default async function VsPage({ params }: PageProps) {
                 )}
                 <Button asChild className="w-full">
                   <a
-                    href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}` })}
+                    href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}`, pageType: "vs-page" })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Open {exchange.name}
+                    Trade on {exchange.name}
                     <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                   </a>
                 </Button>
@@ -683,22 +683,22 @@ export default async function VsPage({ params }: PageProps) {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button asChild size="lg">
                   <a
-                    href={buildClickUrl({ exchangeSlug: a.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}` })}
+                    href={buildClickUrl({ exchangeSlug: a.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}`, pageType: "vs-page" })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Open {a.name}
+                    Trade on {a.name}
                     {aOffer?.bonusAmount ? ` — $${aOffer.bonusAmount.toLocaleString()} Bonus` : ""}
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
                   <a
-                    href={buildClickUrl({ exchangeSlug: b.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}` })}
+                    href={buildClickUrl({ exchangeSlug: b.slug, sourceType: "vs-page", sourcePath: `/vs/${slug}`, pageType: "vs-page" })}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Open {b.name}
+                    Trade on {b.name}
                     {bOffer?.bonusAmount ? ` — $${bOffer.bonusAmount.toLocaleString()} Bonus` : ""}
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
@@ -784,6 +784,55 @@ export default async function VsPage({ params }: PageProps) {
                 <BookOpen className="h-4 w-4 text-primary shrink-0" />
                 Crypto Blog &amp; Guides
               </Link>
+            </div>
+          </div>
+
+          {/* ── Bottom Comparison CTA Block ────────────────────────── */}
+          <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+            <div className="bg-muted/30 px-6 py-4 border-b border-border/40">
+              <h2 className="text-lg font-bold text-center">
+                Start Trading Today
+              </h2>
+              <p className="text-sm text-muted-foreground text-center mt-1">
+                Choose the exchange that fits your needs and start trading in minutes.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+              {[
+                { exchange: a, offer: aOffer },
+                { exchange: b, offer: bOffer },
+              ].map(({ exchange, offer }) => (
+                <div key={exchange.slug} className="p-6 text-center space-y-3">
+                  <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-xl font-bold mx-auto">
+                    {exchange.name.charAt(0)}
+                  </div>
+                  <h3 className="text-base font-bold">{exchange.name}</h3>
+                  <ScoreBadge score={exchange.score} />
+                  {offer && (
+                    <p className="text-sm text-green-600 font-medium">
+                      {offer.bonusAmount
+                        ? `Up to $${offer.bonusAmount.toLocaleString()} bonus`
+                        : offer.offerText}
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      {exchange.fees ? `Spot fees from ${exchange.fees.spotMakerFee}%` : "Competitive fees"}
+                      {exchange.supportedCoinsCount > 0 ? ` | ${exchange.supportedCoinsCount.toLocaleString()}+ coins` : ""}
+                    </p>
+                    <Button asChild className="w-full">
+                      <a
+                        href={buildClickUrl({ exchangeSlug: exchange.slug, sourceType: "vs-page-bottom", sourcePath: `/vs/${slug}`, pageType: "vs-page" })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Trade on {exchange.name}
+                        <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

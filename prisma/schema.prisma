@@ -74,6 +74,7 @@ model AffiliateClick {
   sourcePage       String   @map("source_page")
   sourceType       String   @default("unknown") @map("source_type")
   sourcePath       String   @default("") @map("source_path")
+  pageType         String?  @map("page_type")
   destinationUrl   String   @default("") @map("destination_url")
   campaignTag      String?  @map("campaign_tag")
   clickedAt        DateTime @default(now()) @map("clicked_at")

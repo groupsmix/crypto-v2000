@@ -5,9 +5,18 @@ import {
   BarChart3,
   ArrowLeftRight,
   BookOpen,
+  ExternalLink,
+  Gift,
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
+import { buildClickUrl } from "@/lib/affiliate";
+
+const heroExchanges = [
+  { name: "Binance", slug: "binance", incentive: "20% fee discount" },
+  { name: "Coinbase", slug: "coinbase", incentive: "$10 BTC bonus" },
+  { name: "Bybit", slug: "bybit", incentive: "Up to $30K bonus" },
+];
 
 export function HeroSection() {
   return (
@@ -68,6 +77,34 @@ export function HeroSection() {
             <BookOpen className="h-3.5 w-3.5" />
             Guides &amp; Reviews
           </Link>
+        </div>
+
+        {/* Featured exchange CTA block */}
+        <div className="rounded-xl border border-border/60 bg-card p-4 sm:p-5 max-w-3xl mx-auto">
+          <div className="flex items-center gap-2 mb-3">
+            <Gift className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Featured Exchanges</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {heroExchanges.map((ex) => (
+              <a
+                key={ex.slug}
+                href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "homepage-featured", sourcePath: "/", pageType: "homepage" })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-lg border border-border/60 bg-background p-3 transition-all hover:shadow-md hover:border-primary/30"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold">
+                  {ex.name.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{ex.name}</p>
+                  <p className="text-xs text-green-600">{ex.incentive}</p>
+                </div>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
