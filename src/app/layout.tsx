@@ -80,7 +80,7 @@ function WebSiteSchema() {
       siteConfig.links.twitter,
       siteConfig.links.discord,
       siteConfig.links.telegram,
-    ].filter((l) => l !== "#"),
+    ].filter(Boolean),
   };
 
   return (
