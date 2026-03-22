@@ -8,6 +8,7 @@ import { ArticleBody, extractHeadings } from "@/components/blog/article-body";
 import { TableOfContents } from "@/components/blog/table-of-contents";
 import { RelatedPosts } from "@/components/blog/related-posts";
 import { getBlogPostBySlug, getRelatedPosts } from "@/lib/data/blog-posts";
+import { getTopExchanges } from "@/lib/data/exchanges";
 import { siteConfig } from "@/config/site";
 import { buildClickUrl } from "@/lib/affiliate";
 
@@ -191,12 +192,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const relatedPosts = await getRelatedPosts(
-    post.slug,
-    post.category,
-    post.tags,
-    3
-  );
+  const [relatedPosts, sidebarExchanges] = await Promise.all([
+    getRelatedPosts(post.slug, post.category, post.tags, 3),
+    getTopExchanges(),
+  ]);
 
   const headings = extractHeadings(post.content);
   const readTime = estimateReadTime(post.content);
@@ -289,28 +288,32 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
                 <h3 className="text-sm font-semibold">Top Exchanges</h3>
                 <div className="space-y-2">
-                  {[
-                    { name: "Binance", slug: "binance", incentive: "20% fee discount" },
-                    { name: "Coinbase", slug: "coinbase", incentive: "$10 BTC bonus" },
-                    { name: "Bybit", slug: "bybit", incentive: "Up to $30K bonus" },
-                  ].map((ex) => (
-                    <a
-                      key={ex.slug}
-                      href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "blog-sidebar", sourcePath: `/blog/${post.slug}`, pageType: "blog-post" })}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-card p-2.5 transition-all hover:shadow-sm hover:border-primary/30"
-                    >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold">
-                        {ex.name.charAt(0)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold">{ex.name}</p>
-                        <p className="text-[10px] text-green-600">{ex.incentive}</p>
-                      </div>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
-                    </a>
-                  ))}
+                  {sidebarExchanges.slice(0, 3).map((ex) => {
+                    const offer = ex.offers.find((o) => o.isActive);
+                    const incentive = offer
+                      ? offer.bonusAmount
+                        ? `Up to $${offer.bonusAmount.toLocaleString()} bonus`
+                        : offer.offerText
+                      : "Sign up now";
+                    return (
+                      <a
+                        key={ex.slug}
+                        href={buildClickUrl({ exchangeSlug: ex.slug, sourceType: "blog-sidebar", sourcePath: `/blog/${post.slug}`, pageType: "blog-post" })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-lg border border-border/60 bg-card p-2.5 transition-all hover:shadow-sm hover:border-primary/30"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold">
+                          {ex.name.charAt(0)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold">{ex.name}</p>
+                          <p className="text-[10px] text-green-600">{incentive}</p>
+                        </div>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                      </a>
+                    );
+                  })}
                 </div>
                 <div className="space-y-1.5">
                   <Link

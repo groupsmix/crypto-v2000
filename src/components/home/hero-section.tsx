@@ -12,13 +12,20 @@ import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { buildClickUrl } from "@/lib/affiliate";
 
-const heroExchanges = [
+type HeroExchange = {
+  name: string;
+  slug: string;
+  incentive: string;
+};
+
+const fallbackHeroExchanges: HeroExchange[] = [
   { name: "Binance", slug: "binance", incentive: "20% fee discount" },
   { name: "Coinbase", slug: "coinbase", incentive: "$10 BTC bonus" },
   { name: "Bybit", slug: "bybit", incentive: "Up to $30K bonus" },
 ];
 
-export function HeroSection() {
+export function HeroSection({ exchanges }: { exchanges?: HeroExchange[] }) {
+  const heroExchanges = exchanges && exchanges.length > 0 ? exchanges : fallbackHeroExchanges;
   return (
     <Section className="py-20 md:py-28 lg:py-36">
       <div className="text-center space-y-8 max-w-4xl mx-auto">
@@ -118,4 +125,22 @@ export function HeroSection() {
       </div>
     </Section>
   );
+}
+
+/**
+ * Build hero exchange data from DB exchange records.
+ * Used by the homepage to pass DB-driven data to HeroSection.
+ */
+export function toHeroExchanges(
+  exchanges: { name: string; slug: string; offers: { offerText: string; bonusAmount: number | null; isActive: boolean }[] }[]
+): HeroExchange[] {
+  return exchanges.slice(0, 3).map((ex) => {
+    const offer = ex.offers.find((o) => o.isActive);
+    const incentive = offer
+      ? offer.bonusAmount
+        ? `Up to $${offer.bonusAmount.toLocaleString()} bonus`
+        : offer.offerText
+      : "Sign up now";
+    return { name: ex.name, slug: ex.slug, incentive };
+  });
 }

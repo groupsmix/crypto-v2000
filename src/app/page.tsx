@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { getTopExchanges, getFeaturedExchanges } from "@/lib/data/exchanges";
 import { getLatestBlogPosts } from "@/lib/data/blog-posts";
 import { siteConfig } from "@/config/site";
-import { HeroSection } from "@/components/home/hero-section";
+import { HeroSection, toHeroExchanges } from "@/components/home/hero-section";
 import { TrendingCoins } from "@/components/home/trending-coins";
 import { PopularComparisons } from "@/components/home/popular-comparisons";
 import { TopExchangesTable } from "@/components/home/top-exchanges-table";
@@ -29,7 +29,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroSection />
+      <HeroSection exchanges={toHeroExchanges(featuredExchanges)} />
       <TrendingCoins />
       <PopularComparisons />
       <TopExchangesTable exchanges={topExchanges} />
