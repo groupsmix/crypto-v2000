@@ -1,18 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Menu, X, Search, TrendingUp } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SearchModal } from "@/components/ui/search-modal";
 import { cn } from "@/lib/utils";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+
+  // Cmd+K / Ctrl+K shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        openSearch();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [openSearch]);
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container className="flex h-16 items-center justify-between">
         {/* Logo */}
@@ -38,7 +55,7 @@ export function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Search">
+          <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
             <Search className="h-4 w-4" />
           </Button>
           <ThemeToggle />
@@ -46,7 +63,7 @@ export function Header() {
 
         {/* Mobile Actions */}
         <div className="flex lg:hidden items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Search">
+          <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
             <Search className="h-4 w-4" />
           </Button>
           <ThemeToggle />
@@ -88,5 +105,7 @@ export function Header() {
         </Container>
       </div>
     </header>
+    {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
+    </>
   );
 }

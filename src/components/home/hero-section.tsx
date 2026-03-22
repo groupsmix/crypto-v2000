@@ -24,7 +24,7 @@ export function HeroSection() {
       <div className="text-center space-y-8 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted px-4 py-1.5 text-sm text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          AI-Powered Exchange Comparisons
+          Side-by-Side Exchange Comparisons
         </div>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
           Compare Crypto Exchanges{" "}
@@ -34,7 +34,7 @@ export function HeroSection() {
           in Real Time
         </h1>
         <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-          Compare fees, bonuses &amp; features across 50+ exchanges. Track live
+          Compare fees, bonuses &amp; features across top exchanges. Track live
           prices and make smarter trading decisions.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
@@ -112,7 +112,7 @@ export function HeroSection() {
             <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
             Live data
           </span>
-          <span>50+ exchanges</span>
+          <span>Top exchanges</span>
           <span>Updated every 60s</span>
         </div>
       </div>

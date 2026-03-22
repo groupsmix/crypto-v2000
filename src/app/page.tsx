@@ -12,9 +12,9 @@ import { ToolsStrip } from "@/components/home/tools-strip";
 import { NewsletterCta } from "@/components/home/newsletter-cta";
 
 export const metadata: Metadata = {
-  title: "CryptoCompare AI — Compare Crypto Exchanges & Track Prices",
+  title: "CryptoCompare — Compare Crypto Exchanges & Track Prices",
   description:
-    "Compare fees, features, and security across 50+ crypto exchanges. Live prices, side-by-side comparisons, expert reviews, and exclusive signup bonuses.",
+    "Compare fees, features, and security across top crypto exchanges. Live prices, side-by-side comparisons, expert reviews, and exclusive signup bonuses.",
   alternates: {
     canonical: siteConfig.url,
   },

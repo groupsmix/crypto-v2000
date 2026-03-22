@@ -58,20 +58,24 @@ export function Footer() {
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               {siteConfig.description}
             </p>
-            <div className="flex items-center gap-3 pt-1">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={social.label}
-                >
-                  <social.icon className="h-5 w-5" />
-                </a>
-              ))}
-            </div>
+            {socialLinks.some((s) => s.href) && (
+              <div className="flex items-center gap-3 pt-1">
+                {socialLinks
+                  .filter((social) => social.href)
+                  .map((social) => (
+                    <a
+                      key={social.label}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={social.label}
+                    >
+                      <social.icon className="h-5 w-5" />
+                    </a>
+                  ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Links */}

@@ -4,18 +4,16 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ExternalLink,
-  Star,
   Calendar,
   MapPin,
   Coins,
   Smartphone,
-  Users,
-  TrendingUp,
   Clock,
   Gift,
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
+import { ScoreBadge } from "@/components/ui/score-badge";
 import { DetailTabs } from "@/components/exchange/detail-tabs";
 import {
   getExchangeBySlug,
@@ -170,75 +168,6 @@ function ExchangeSchema({ exchange }: { exchange: ExchangeDetail }) {
   );
 }
 
-// ─── Score Badge ───────────────────────────────────────────────────────────────
-
-function ScoreBadge({ score, size = "md" }: { score: number; size?: "sm" | "md" | "lg" }) {
-  let color = "bg-green-500/10 text-green-600 border-green-500/20";
-  if (score < 8) color = "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
-  if (score < 7) color = "bg-red-500/10 text-red-600 border-red-500/20";
-
-  const sizeClasses = {
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-3 py-1 text-sm",
-    lg: "px-4 py-1.5 text-base",
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-bold border ${color} ${sizeClasses[size]}`}
-    >
-      <Star className={size === "lg" ? "h-4 w-4" : "h-3 w-3"} />
-      {score.toFixed(1)} / 10
-    </span>
-  );
-}
-
-// ─── Rating Breakdown ──────────────────────────────────────────────────────────
-
-function RatingBreakdown({ score }: { score: number }) {
-  const ratings = [
-    { label: "Trading Fees", value: Math.min(10, score + 0.2) },
-    { label: "Security", value: Math.min(10, score - 0.1) },
-    { label: "User Experience", value: Math.min(10, score + 0.3) },
-    { label: "Customer Support", value: Math.min(10, score - 0.5) },
-  ];
-
-  return (
-    <div className="space-y-3">
-      {ratings.map((r) => {
-        const val = Math.max(1, Math.min(10, r.value));
-        const pct = (val / 10) * 100;
-        return (
-          <div key={r.label} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{r.label}</span>
-              <span className="font-medium">{val.toFixed(1)}</span>
-            </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Generated quick stat helpers ──────────────────────────────────────────────
-
-function estimateUsers(score: number, foundedYear: number | null): string {
-  const age = foundedYear ? new Date().getFullYear() - foundedYear : 5;
-  const base = score * age * 1.5;
-  return `${Math.round(base)}M+`;
-}
-
-function estimateVolume(score: number): string {
-  const vol = Math.round(score * 0.8 * 100) / 100;
-  return `$${vol}B`;
-}
 
 // ─── Main Page ──────────────────────────────────────────────────────────────────
 
@@ -304,22 +233,12 @@ export default async function ExchangePage({ params }: ExchangePageProps) {
           </div>
 
           {/* ── Quick Stats Row ────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              {
-                icon: Users,
-                label: "Registered Users",
-                value: estimateUsers(exchange.score, exchange.foundedYear),
-              },
               {
                 icon: Calendar,
                 label: "Founded",
                 value: exchange.foundedYear?.toString() ?? "N/A",
-              },
-              {
-                icon: TrendingUp,
-                label: "24h Volume (est.)",
-                value: estimateVolume(exchange.score),
               },
               {
                 icon: Coins,
@@ -381,16 +300,15 @@ export default async function ExchangePage({ params }: ExchangePageProps) {
 
             {/* Right Sidebar */}
             <aside className="space-y-6">
-              {/* Rating Breakdown */}
+              {/* Overall Score */}
               <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
-                <h3 className="text-sm font-semibold">Rating Breakdown</h3>
+                <h3 className="text-sm font-semibold">Overall Score</h3>
                 <div className="text-center space-y-1">
                   <p className="text-3xl font-bold text-primary">
                     {exchange.score.toFixed(1)}
                   </p>
                   <p className="text-xs text-muted-foreground">out of 10</p>
                 </div>
-                <RatingBreakdown score={exchange.score} />
               </div>
 
               {/* Similar Exchanges */}

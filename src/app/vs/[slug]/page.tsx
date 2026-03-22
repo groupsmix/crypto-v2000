@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
+import { ScoreBadge } from "@/components/ui/score-badge";
 import { siteConfig } from "@/config/site";
 import { buildClickUrl } from "@/lib/affiliate";
 import { getVsComparison, getAllVsPairs } from "@/lib/data/vs-comparisons";
@@ -182,21 +183,6 @@ function VsSchema({
 }
 
 // ─── Helper Components ─────────────────────────────────────────────────────────
-
-function ScoreBadge({ score }: { score: number }) {
-  let color = "bg-green-500/10 text-green-600 border-green-500/20";
-  if (score < 8) color = "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
-  if (score < 7) color = "bg-red-500/10 text-red-600 border-red-500/20";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold border ${color}`}
-    >
-      <Star className="h-3.5 w-3.5" />
-      {score.toFixed(1)}
-    </span>
-  );
-}
 
 function BoolCell({ value }: { value: boolean }) {
   return value ? (

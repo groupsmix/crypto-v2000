@@ -14,8 +14,7 @@ type CoinPrice = {
   price_change_percentage_24h: number;
 };
 
-const COINGECKO_URL =
-  "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,binancecoin,solana,ripple,cardano,dogecoin,polkadot&order=market_cap_desc&per_page=8&page=1&sparkline=false";
+const PRICES_API = "/api/prices/trending";
 
 const fallbackCoins: CoinPrice[] = [
   { id: "bitcoin", symbol: "BTC", name: "Bitcoin", current_price: 87432.1, price_change_percentage_24h: 2.34 },
@@ -50,7 +49,7 @@ export function TrendingCoins() {
 
   const fetchPrices = useCallback(async () => {
     try {
-      const res = await fetch(COINGECKO_URL);
+      const res = await fetch(PRICES_API);
       if (!res.ok) throw new Error("Failed to fetch");
       const data: CoinPrice[] = await res.json();
       setCoins(
