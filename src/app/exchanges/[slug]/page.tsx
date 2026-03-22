@@ -154,6 +154,35 @@ function ExchangeSchema({ exchange }: { exchange: ExchangeDetail }) {
     ],
   };
 
+  const reviewSchema = {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    itemReviewed: {
+      "@type": "Product",
+      name: `${exchange.name} Cryptocurrency Exchange`,
+      category: "Cryptocurrency Exchange",
+      ...(exchange.description ? { description: exchange.description } : {}),
+    },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: exchange.score.toFixed(1),
+      bestRating: "10",
+      worstRating: "0",
+    },
+    author: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    reviewBody: exchange.description || `Comprehensive review of ${exchange.name} cryptocurrency exchange.`,
+    url: `${siteConfig.url}/exchanges/${exchange.slug}`,
+  };
+
   return (
     <>
       <script
@@ -163,6 +192,10 @@ function ExchangeSchema({ exchange }: { exchange: ExchangeDetail }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewSchema) }}
       />
     </>
   );
