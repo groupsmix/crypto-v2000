@@ -8,12 +8,31 @@ import { Button } from "@/components/ui/button";
 export function NewsletterCta() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
-    // Placeholder — newsletter signup will be implemented in a future task
-    setSubmitted(true);
+    if (!email || loading) return;
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Something went wrong.");
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -51,13 +70,16 @@ export function NewsletterCta() {
                 required
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
-              <Button type="submit" size="sm" className="shrink-0">
-                Subscribe
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              <Button type="submit" size="sm" className="shrink-0" disabled={loading}>
+                {loading ? "Subscribing..." : "Subscribe"}
+                {!loading && <ArrowRight className="ml-1.5 h-3.5 w-3.5" />}
               </Button>
             </form>
           )}
 
+          {error && (
+            <p className="text-xs text-red-500">{error}</p>
+          )}
           <p className="text-xs text-muted-foreground">
             No spam, unsubscribe anytime. We respect your privacy.
           </p>

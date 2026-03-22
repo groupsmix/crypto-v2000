@@ -1,24 +1,10 @@
 import Link from "next/link";
-import { ExternalLink, Star } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
+import { ScoreBadge } from "@/components/ui/score-badge";
 import { type ExchangeWithOffers } from "@/lib/data/exchanges";
 import { buildClickUrl } from "@/lib/affiliate";
-
-function ScoreBadge({ score }: { score: number }) {
-  let color = "bg-green-500/10 text-green-600";
-  if (score < 8) color = "bg-yellow-500/10 text-yellow-600";
-  if (score < 7) color = "bg-red-500/10 text-red-600";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${color}`}
-    >
-      <Star className="h-3 w-3" />
-      {score.toFixed(1)}
-    </span>
-  );
-}
 
 export function TopExchangesTable({
   exchanges,
